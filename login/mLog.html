@@ -1,17 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Sana Mobile Login</title>
-        <link rel="icon" type="image/svg+xml" href="../public/vite.svg">
-        <link rel="stylesheet" href="./mHome.css">
-
-        </head>
-    <body>
-
-
+<!-- 
+ Not sure how i can tie this in as it's 3rd party and has sana-web. this is mobile so will need to check with James
         <div id="root"></div>
         <script type="module" src="/src/main.tsx"></script>
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sana Mobile Login</title>
+  <link rel="stylesheet" href="../login/mLog.css">
+       
+
+</head>
+    <body>
+        <div class="container">
+            <div class="img-box">
+                <img src="sportBoy.jpg" alt="">
+            </div>
+            <div class="content-box">
+                <div class="content">
+                    <h2>Login</h2>
+                        <form action="">
+                            <div class="input-box">
+                            <label for="inputUserName">Username</label>
+                            <input type="text" placeholder="Enter Username..." id="inputUserName">
+                        </div>
+
+
+                        <div class="input-box">
+                            <label for="inputPass">Password</label>
+                            <input type="text" placeholder="Enter Password..." id="inputPass">
+                        </div>
+
+                        <div class="input-box">
+                            <label for="inputPass"><input type="checkbox">Remember Password</label>
+                            
+                        </div>
+
+                        <div class="input-box">
+                            <input type="submit" value="Login">                            
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+           
+            
     </body>
 </html>
