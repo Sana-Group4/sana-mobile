@@ -4,11 +4,12 @@
     margin: 0;
     box-sizing: border-box;
     font-family: verdana;
-    background-color: #ebeef1;
+    
 
 }
 
 body{
+    background-color: #ebeef1;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -49,7 +50,7 @@ body{
     justify-content: center;
     align-items: center;
     width: 50%;
-
+    
 }
 
 .container .content-box .content{
@@ -64,7 +65,7 @@ body{
     border-bottom: 3px solid rgb(92, 110, 190);
     padding: 5px;
     display: inline-block;
-    margin: 30px;
+    margin: 30px 30px 30px 0px;
     font-size: 1.5rem;
     letter-spacing: 0.9px;
 }
@@ -86,6 +87,7 @@ body{
     font-size: 0.8;
     box-shadow: 4px 4px 4px -1px rgba(92, 110, 190, 0.16),
     -6px -6px 6px -1px rgb(92, 110, 190, 0.7);
+    background-color: aliceblue;
 }
 
 .input-box input[type="checkbox"]{
@@ -93,4 +95,86 @@ body{
     height: 15px;
     margin-right: 10px;
     margin-left: 20px;
+    box-shadow: none;
+}
+
+.input-box input[type="submit"]{
+    background-color: rgba(161,129,242, 0.19);
+    box-shadow: none;
+    color: black;
+    box-shadow: 12px 12px 12px -1px rgba(28, 44, 118, 0.16),
+    -6px -6px 6px -1px rgba(92, 110, 190, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.3s;
+
+}
+
+.input-box input[type="submit"]:hover{
+     background-color: rgb(92, 110, 190);
+     color: white;
+     box-shadow: 4px 4px 4px -1px rgba(28, 44, 118, 0.25),
+     -4px -4px 4px -1px rgba(92, 110, 190, 0.5);
+     transform: translateY(-2px);
+}
+
+.social-media{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.social-media i{
+    width: 48px;
+    height: 48px;
+    display: flex;                  
+    align-items: center;            
+    justify-content: center;        
+    margin: 0 7px;
+    margin-top: 15px;
+    font-size: 1.35rem;
+    border-radius: 50%;             
+    background-color: #ebeef1;
+    color: rgb(161, 129, 242);
+    box-shadow: 4px 4px 4px -1px rgba(28, 44, 118, 0.16),
+    -6px -6px 6px -1px rgba(92, 110, 190, 0.7);
+    transition: 0.3s ease;
+    cursor: pointer;
+}
+
+.social-media i:hover{
+    background-color: rgb(161, 129, 242);
+    color: white;
+}
+/*can be viewd without the image for mobile*/
+@media (max-width: 768px){
+    .container{
+        margin: 40px;
+    }
+    .container .img-box{
+        display: none;
+    }
+    .container .content-box{
+        width: 100%;
+    }
+    .container .content-box .content{
+        width: 75%;
+
+    }
+}
+/*display image for tablets*/
+@media (max-width: 962px){
+    .container{
+        margin: 40px;
+    }
+    
+    .container .content-box{
+        width: 100%;
+    }
+    .container .content-box .content{
+        width: 75%;
+        
+    }
 }
