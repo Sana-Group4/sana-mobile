@@ -71,7 +71,7 @@ export default function CoachLogin() {
         <View style={{ marginBottom: 16, width: "85%", alignSelf: "center" }}>
 
         <TextInput
-            placeholder="Enter your email"
+            placeholder="Email"
             placeholderTextColor="#888"
             autoCapitalize="none"
             keyboardType="email-address"
