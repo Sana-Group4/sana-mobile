@@ -11,16 +11,16 @@ export default function Index() {
       <View
         style={{
             width: screenWidth,
-            height: 600,        // visible height
-            overflow: "hidden", // crop anything outside
+            height: 500,
+            overflow: "hidden",
         }}
         >
         <Image
             source={require("../assets/images/athlete-resting.png")}
             style={{
             width: screenWidth,
-            height: 600,       // original image height
-            resizeMode: "cover", // fill container and crop
+            height: 500,
+            resizeMode: "cover",
             }}
         />
         </View>
@@ -30,7 +30,7 @@ export default function Index() {
       <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "flex-start" }}>
         
         {/* Title */}
-        <Text style={{ fontSize: 28, fontWeight: "450", marginBottom: 8, marginTop: 8, textAlign: "center" }}>
+        <Text style={{ fontSize: 28, fontWeight: "450", marginBottom: 8, marginTop: 32, textAlign: "center" }}>
           Welcome to Sana Sports
         </Text>
 
