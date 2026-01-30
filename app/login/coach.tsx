@@ -68,23 +68,25 @@ export default function CoachLogin() {
           Log in to manage your athletes
         </Text>
 
+        <View style={{ marginBottom: 16, width: "85%", alignSelf: "center" }}>
+
         <TextInput
-          placeholder="Email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={{
-            width: "85%",
-            alignSelf: "center",
+            placeholder="Enter your email"
+            placeholderTextColor="#888"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={{
             borderWidth: 1,
             borderColor: "#ddd",
             borderRadius: 12,
             padding: 16,
-            marginBottom: 16,
-          }}
+            }}
         />
+        </View>
 
         <TextInput
           placeholder="Password"
+          placeholderTextColor="#888"
           secureTextEntry
           style={{
             width: "85%",
