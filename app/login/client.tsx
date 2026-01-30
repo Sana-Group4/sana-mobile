@@ -70,6 +70,7 @@ export default function ClientLogin() {
 
         <TextInput
           placeholder="Email"
+          placeholderTextColor="#888"
           autoCapitalize="none"
           keyboardType="email-address"
           style={{
@@ -85,6 +86,7 @@ export default function ClientLogin() {
 
         <TextInput
           placeholder="Password"
+          placeholderTextColor="#888"
           secureTextEntry
           style={{
             width: "85%",
@@ -114,7 +116,7 @@ export default function ClientLogin() {
           </Text>
         </Pressable>
 
-        <Pressable onPress={() => router.push("/register/coach")}>
+        <Pressable onPress={() => router.push("/register/client")}>
           <Text style={{ textAlign: "center" }}>
             Don’t have an account?{" "}
             <Text style={{ color: "blue" }}>Register</Text>
