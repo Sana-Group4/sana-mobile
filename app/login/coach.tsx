@@ -5,123 +5,82 @@ import {
   TextInput,
   Pressable,
   Image,
-  Dimensions,
+  StyleSheet,
+  Platform,
 } from "react-native";
-import { router } from "expo-router";
 
-const { width } = Dimensions.get("window");
+import { styles } from "./coachStyle";
+import { router } from "expo-router";
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+
 
 export default function CoachLogin() {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      
-      {/* Image Stack */}
-      <View style={{ position: "relative" }}>
-        
-       <View
-        style={{
-            alignItems: "center",
-        }}
-        >
-        <View
-            style={{
-            width: 300,
-            height: 240,
-            overflow: "hidden",
-            borderRadius: 16,
-            }}
-        >
+    <SafeAreaView style={styles.safe}>
+      {/* Shadow wrapper */}
+      <View style={styles.shadowWrapper}>
+        {/* Inner login panel */}
+        <View style={styles.container}>
+          {/* Top image */}
+          <View style={styles.imgBox}>
             <Image
-            source={require("../../assets/images/gym.png")}
-            style={{
-                width: "100%",
-                height: "100%",
-                resizeMode: "cover",
-            }}
+              source={require("../../assets/images/athlete-resting.png")}
+              style={styles.image}
             />
+          </View>
+
+          {/* Login content */}
+          <View style={styles.contentBox}>
+            <Text style={styles.title}>Login</Text>
+
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Username</Text>
+              <TextInput
+                placeholder="Enter your username"
+                placeholderTextColor="#999"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                placeholder="Enter your password"
+                placeholderTextColor="#999"
+                secureTextEntry
+                style={styles.input}
+              />
+            </View>
+
+            <Pressable style={styles.button}>
+              <Text style={styles.buttonText}>Login</Text>
+            </Pressable>
+
+            {/* Social login buttons */}
+            <View style={styles.socialContainer}>
+              <Pressable style={styles.socialButton}>
+                <FontAwesome5 name="google" size={24} color="#5c6ebe" />
+              </Pressable>
+
+              <Pressable style={styles.socialButton}>
+                <FontAwesome name="phone" size={24} color="#5c6ebe" />
+              </Pressable>
+
+              <Pressable style={styles.socialButton}>
+                <FontAwesome name="envelope" size={24} color="#5c6ebe" />
+              </Pressable>
+            </View>
+
+            <Pressable onPress={() => router.push("/register/coach")}>
+              <Text style={styles.register}>
+                Not with us?{" "}
+                <Text style={styles.registerLink}>Register</Text>
+              </Text>
+            </Pressable>
+          </View>
         </View>
-        </View>
-
-
-        {/* Coach Image (overlapping) */}
-        <Image
-          source={require("../../assets/images/coach.png")}
-          style={{
-            width: 180,
-            height: 180,
-            resizeMode: "contain",
-            position: "absolute",
-            bottom: -50,
-            alignSelf: "center",
-            zIndex: 10,
-          }}
-        />
-      </View>
-
-      {/* Content */}
-      <View style={{ padding: 24, marginTop: 20 }}>
-        <Text style={{ fontSize: 28, fontWeight: "600", marginBottom: 8, alignSelf: "center"}}>
-          Coach Login
-        </Text>
-
-        <Text style={{ fontSize: 16, marginBottom: 24, alignSelf: "center" }}>
-          Log in to manage your athletes
-        </Text>
-
-        <View style={{ marginBottom: 16, width: "85%", alignSelf: "center" }}>
-
-        <TextInput
-            placeholder="Email"
-            placeholderTextColor="#888"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={{
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            padding: 16,
-            }}
-        />
-        </View>
-
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor="#888"
-          secureTextEntry
-          style={{
-            width: "85%",
-            alignSelf: "center",
-            borderWidth: 1,
-            borderColor: "#ddd",
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 24,
-          }}
-        />
-
-        <Pressable
-          onPress={() => console.log("Coach login")}
-          style={{
-            width: "85%",
-            alignSelf: "center",
-            backgroundColor: "#000",
-            padding: 16,
-            borderRadius: 22,
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-            Login
-          </Text>
-        </Pressable>
-
-        <Pressable onPress={() => router.push("/register/coach")}>
-          <Text style={{ textAlign: "center" }}>
-            Don’t have an account?{" "}
-            <Text style={{ color: "blue" }}>Register</Text>
-          </Text>
-        </Pressable>
       </View>
     </SafeAreaView>
   );
