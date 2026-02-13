@@ -1,5 +1,5 @@
-import { SafeAreaView, View, Text, Image, Pressable, Dimensions } from "react-native";
 import { router } from "expo-router";
+import { Dimensions, Image, Pressable, SafeAreaView, Text, View } from "react-native";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -30,7 +30,7 @@ export default function Index() {
       <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "flex-start" }}>
         
         {/* Title */}
-        <Text style={{ fontSize: 28, fontWeight: "450", marginBottom: 8, marginTop: 32, textAlign: "center" }}>
+        <Text style={{ fontSize: 28, fontWeight: "500", marginBottom: 8, marginTop: 32, textAlign: "center" }}>
           Welcome to Sana Sports
         </Text>
 
