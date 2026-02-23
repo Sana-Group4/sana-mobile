@@ -2,8 +2,8 @@ import { SafeAreaView, View, Text, TextInput, Pressable, Image, Alert } from "re
 import { useState } from "react";
 import { router } from "expo-router";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker"; // add this import
-import { styles } from "./loginStyle"; // reuse the same style file
+import { Picker } from "@react-native-picker/picker"
+import { styles } from "./loginStyle";
 
 const API_URL = "http://192.168.0.62:8000";
 
@@ -13,60 +13,63 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [accountType, setAccountType] = useState<"coach" | "client">("client"); // default
+  const [accountType, setAccountType] = useState<"coach" | "client">("client");
   const [loading, setLoading] = useState(false);
 
-  // auto-generate username from first+last name
+  // auto generate username from first+last name
   const generateUsername = (first: string, last: string) => {
     const random = Math.floor(100 + Math.random() * 900);
     return `${first}${last}${random}`.toLowerCase().replace(/\s/g, "");
   };
 
   const handleRegister = async () => {
-    if (!fname || !lname || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
+  if (!fname || !lname || !email || !password || !confirmPassword) {
+    Alert.alert("Error", "Please fill in all fields");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    Alert.alert("Error", "Passwords do not match");
+    return;
+  }
+
+  setLoading(true);
+
+  const username = generateUsername(fname, lname);
+
+  const userType = accountType === "client" ? "Client" : "Coach";
+
+  try {
+    const response = await fetch(`${API_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        phone: 0,
+        firstName: fname,
+        lastName: lname,
+        username,
+        password,
+        userType,
+      }),
+    });
+
+    const text = await response.text();
+    console.log("Register response:", text);
+
+    if (response.ok) {
+      Alert.alert("Success", `Account created! Your username is: ${username}`);
+      router.replace("/");
+    } else {
+      Alert.alert("Error", text);
     }
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
-      return;
-    }
-
-    setLoading(true);
-    const username = generateUsername(fname, lname);
-
-    try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          firstName: fname,
-          lastName: lname,
-          username,
-          password,
-        }),
-      });
-
-      const text = await response.text();
-      console.log("Register response:", text);
-
-      if (response.ok) {
-        Alert.alert(
-          "Success",
-          `Account created! Your username is: ${username}`
-        );
-        router.replace("/"); // go to main login page
-      } else {
-        Alert.alert("Error", text);
-      }
-    } catch (err) {
-      console.error("Network error:", err);
-      Alert.alert("Error", "Unable to connect to server");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error("Network error:", err);
+    Alert.alert("Error", "Unable to connect to server");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <SafeAreaView style={styles.safe}>
