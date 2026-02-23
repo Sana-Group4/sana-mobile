@@ -2,19 +2,21 @@ import { SafeAreaView, View, Text, TextInput, Pressable, Image, Alert } from "re
 import { useState } from "react";
 import { router } from "expo-router";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker"; // add this import
 import { styles } from "./loginStyle"; // reuse the same style file
 
 const API_URL = "http://192.168.0.62:8000";
 
-export default function Register({ role = "coach" }: { role?: "coach" | "client" }) {
+export default function Register() {
   const [fname, setFname] = useState("");
   const [lname, setLname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [accountType, setAccountType] = useState<"coach" | "client">("client"); // default
   const [loading, setLoading] = useState(false);
 
-  // optional: auto-generate username from first+last name
+  // auto-generate username from first+last name
   const generateUsername = (first: string, last: string) => {
     const random = Math.floor(100 + Math.random() * 900);
     return `${first}${last}${random}`.toLowerCase().replace(/\s/g, "");
@@ -71,9 +73,8 @@ export default function Register({ role = "coach" }: { role?: "coach" | "client"
       <View style={styles.shadowWrapper}>
         <View style={styles.container}>
 
-          {/* Form content */}
           <View style={styles.contentBox}>
-            <Text style={styles.title}>{role === "coach" ? "Account Registration" : "Register"}</Text>
+            <Text style={styles.title}>Account Registration</Text>
 
             <View style={styles.inputBox}>
               <Text style={styles.label}>First Name</Text>
@@ -110,6 +111,44 @@ export default function Register({ role = "coach" }: { role?: "coach" | "client"
               />
             </View>
 
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ marginBottom: 8, fontWeight: "300", color: "#333" }}>
+              Account Type
+            </Text>
+            <View style={{ flexDirection: "row" }}>
+              <Pressable
+                onPress={() => setAccountType("client")}
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: accountType === "client" ? "blue" : "#ddd",
+                  borderRadius: 12,
+                  marginRight: 8,
+                  backgroundColor: accountType === "client" ? "#e0f0ff" : "#fff",
+                  alignItems: "center",
+                }}
+              >
+                <Text>Client</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setAccountType("coach")}
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: accountType === "coach" ? "blue" : "#ddd",
+                  borderRadius: 12,
+                  backgroundColor: accountType === "coach" ? "#e0f0ff" : "#fff",
+                  alignItems: "center",
+                }}
+              >
+                <Text>Coach</Text>
+              </Pressable>
+            </View>
+          </View>
+
             <View style={styles.inputBox}>
               <Text style={styles.label}>Password</Text>
               <TextInput
@@ -143,19 +182,6 @@ export default function Register({ role = "coach" }: { role?: "coach" | "client"
                 {loading ? "Registering..." : "Register"}
               </Text>
             </Pressable>
-
-            {/* Optional: social buttons */}
-            <View style={styles.socialContainer}>
-              <Pressable style={styles.socialButton}>
-                <FontAwesome5 name="google" size={24} color="#5c6ebe" />
-              </Pressable>
-              <Pressable style={styles.socialButton}>
-                <FontAwesome name="phone" size={24} color="#5c6ebe" />
-              </Pressable>
-              <Pressable style={styles.socialButton}>
-                <FontAwesome name="envelope" size={24} color="#5c6ebe" />
-              </Pressable>
-            </View>
 
             <Pressable onPress={() => router.replace("/")}>
               <Text style={styles.register}>
