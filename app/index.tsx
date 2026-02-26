@@ -1,15 +1,15 @@
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useState } from "react";
 import {
+  Alert,
+  Image,
+  Pressable,
   SafeAreaView,
-  View,
   Text,
   TextInput,
-  Pressable,
-  Image,
-  Alert,
+  View,
 } from "react-native";
-import { useState } from "react";
-import { router } from "expo-router";
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "./loginStyle"; // your existing styles
 
 const API_URL = "http://192.168.0.62:8000"; // replace with your backend IP
