@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 
@@ -230,6 +231,7 @@ export default function CoachHome() {
         </Pressable>
 
         <Pressable
+          onPress={() => router.push("/settings")}
           style={{
             flex: 1,
             alignItems: "center",

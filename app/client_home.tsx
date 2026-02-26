@@ -1,5 +1,6 @@
+import { router } from "expo-router";
 import { useState } from "react";
-import { Dimensions, FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { Dimensions, Pressable, ScrollView, Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 
 const screenWidth = Dimensions.get("window").width;
@@ -75,7 +76,6 @@ export default function ClientHome() {
               <Text style={{ fontSize: 14, color: "#6b7280" }}>Exercise</Text>
             </View>
 
-            {/* Calories Card */}
             <View
               style={{
                 backgroundColor: "#fff7ed",
@@ -176,16 +176,19 @@ export default function ClientHome() {
           </View>
         </View>
 
-      <View style={{ flex: 1, paddingHorizontal: 16 }}>
+      <View style={{ paddingHorizontal: 16, marginBottom: 100 }}>
         <Text style={{ fontSize: 20, fontWeight: "600", marginTop: 16, marginBottom: 16 }}>
           My Tasks
         </Text>
 
-        <FlatList
-          data={todos}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+        {todos.length === 0 ? (
+          <Text style={{ textAlign: "center", color: "#888", marginTop: 20 }}>
+            No tasks assigned yet. Your coach will assign tasks for you.
+          </Text>
+        ) : (
+          todos.map((item) => (
             <View
+              key={item.id}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -240,13 +243,8 @@ export default function ClientHome() {
                 </Text>
               </Pressable>
             </View>
-          )}
-          ListEmptyComponent={
-            <Text style={{ textAlign: "center", color: "#888", marginTop: 20 }}>
-              No tasks assigned yet. Your coach will assign tasks for you.
-            </Text>
-          }
-        />
+          ))
+        )}
       </View>
       </ScrollView>
 
@@ -305,6 +303,7 @@ export default function ClientHome() {
         </Pressable>
 
         <Pressable
+          onPress={() => router.push("/settings")}
           style={{
             flex: 1,
             alignItems: "center",
