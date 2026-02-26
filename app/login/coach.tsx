@@ -1,13 +1,13 @@
+import { router } from "expo-router";
 import {
+  Dimensions,
+  Image,
+  Pressable,
   SafeAreaView,
-  View,
   Text,
   TextInput,
-  Pressable,
-  Image,
-  Dimensions,
+  View,
 } from "react-native";
-import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -100,7 +100,7 @@ export default function CoachLogin() {
         />
 
         <Pressable
-          onPress={() => console.log("Coach login")}
+          onPress={() => router.push("/coach_home")}
           style={{
             width: "85%",
             alignSelf: "center",
