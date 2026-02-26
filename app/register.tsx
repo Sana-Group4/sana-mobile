@@ -1,70 +1,195 @@
-import {
-  SafeAreaView,
-  View,
-  Text,
-  Image,
-  Pressable,
-  Dimensions,
-} from "react-native";
+import { SafeAreaView, View, Text, TextInput, Pressable, Image, Alert } from "react-native";
+import { useState } from "react";
 import { router } from "expo-router";
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker"; // add this import
+import { styles } from "./loginStyle"; // reuse the same style file
 
-const { width } = Dimensions.get("window");
+const API_URL = "http://192.168.0.62:8000";
 
 export default function Register() {
+  const [fname, setFname] = useState("");
+  const [lname, setLname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [accountType, setAccountType] = useState<"coach" | "client">("client"); // default
+  const [loading, setLoading] = useState(false);
+
+  // auto-generate username from first+last name
+  const generateUsername = (first: string, last: string) => {
+    const random = Math.floor(100 + Math.random() * 900);
+    return `${first}${last}${random}`.toLowerCase().replace(/\s/g, "");
+  };
+
+  const handleRegister = async () => {
+    if (!fname || !lname || !email || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+    const username = generateUsername(fname, lname);
+
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          firstName: fname,
+          lastName: lname,
+          username,
+          password,
+        }),
+      });
+
+      const text = await response.text();
+      console.log("Register response:", text);
+
+      if (response.ok) {
+        Alert.alert(
+          "Success",
+          `Account created! Your username is: ${username}`
+        );
+        router.replace("/"); // go to main login page
+      } else {
+        Alert.alert("Error", text);
+      }
+    } catch (err) {
+      console.error("Network error:", err);
+      Alert.alert("Error", "Unable to connect to server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/* Content */}
-      <View style={{ padding: 24, alignItems: "center" }}>
-        <Text style={{ fontSize: 28, fontWeight: "600", marginBottom: 8 }}>
-          Welcome to Sana Sports
-        </Text>
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.shadowWrapper}>
+        <View style={styles.container}>
 
-        <Text style={{ fontSize: 16, marginBottom: 24, textAlign: "center"}}>
-          Choose the account type you would like to create
-        </Text>
+          <View style={styles.contentBox}>
+            <Text style={styles.title}>Account Registration</Text>
 
-        {/* Coach */}
-        <Pressable
-          onPress={() => router.push("/register/coach")}
-          style={{
-            width: "100%",
-            padding: 16,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#ddd",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <Image
-            source={require("../assets/images/coach.png")}
-            style={{ width: 80, height: 150, marginBottom: 8 }}
-          />
-          <Text style={{ fontSize: 16, fontWeight: "600" }}>
-            Coach account
-          </Text>
-        </Pressable>
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>First Name</Text>
+              <TextInput
+                placeholder="Enter first name"
+                placeholderTextColor="#999"
+                style={styles.input}
+                value={fname}
+                onChangeText={setFname}
+              />
+            </View>
 
-        {/* Client */}
-        <Pressable
-          onPress={() => router.push("/register/client")}
-          style={{
-            width: "100%",
-            padding: 16,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#ddd",
-            alignItems: "center",
-          }}
-        >
-          <Image
-            source={require("../assets/images/client.png")}
-            style={{ width: 80, height: 150, marginBottom: 8 }}
-          />
-          <Text style={{ fontSize: 16, fontWeight: "600" }}>
-            Client account
-          </Text>
-        </Pressable>
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput
+                placeholder="Enter last name"
+                placeholderTextColor="#999"
+                style={styles.input}
+                value={lname}
+                onChangeText={setLname}
+              />
+            </View>
+
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                placeholder="Enter email"
+                placeholderTextColor="#999"
+                style={styles.input}
+                value={email}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                onChangeText={setEmail}
+              />
+            </View>
+
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ marginBottom: 8, fontWeight: "300", color: "#333" }}>
+              Account Type
+            </Text>
+            <View style={{ flexDirection: "row" }}>
+              <Pressable
+                onPress={() => setAccountType("client")}
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: accountType === "client" ? "blue" : "#ddd",
+                  borderRadius: 12,
+                  marginRight: 8,
+                  backgroundColor: accountType === "client" ? "#e0f0ff" : "#fff",
+                  alignItems: "center",
+                }}
+              >
+                <Text>Client</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setAccountType("coach")}
+                style={{
+                  flex: 1,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: accountType === "coach" ? "blue" : "#ddd",
+                  borderRadius: 12,
+                  backgroundColor: accountType === "coach" ? "#e0f0ff" : "#fff",
+                  alignItems: "center",
+                }}
+              >
+                <Text>Coach</Text>
+              </Pressable>
+            </View>
+          </View>
+
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                placeholder="Enter password"
+                placeholderTextColor="#999"
+                style={styles.input}
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+            </View>
+
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <TextInput
+                placeholder="Confirm password"
+                placeholderTextColor="#999"
+                style={styles.input}
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+            </View>
+
+            <Pressable
+              onPress={handleRegister}
+              style={[styles.button, loading && { opacity: 0.6 }]}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? "Registering..." : "Register"}
+              </Text>
+            </Pressable>
+
+            <Pressable onPress={() => router.replace("/")}>
+              <Text style={styles.register}>
+                Already have an account? <Text style={styles.registerLink}>Login</Text>
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );

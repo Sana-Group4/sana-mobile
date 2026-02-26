@@ -1,69 +1,137 @@
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Dimensions, Image, Pressable, SafeAreaView, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Alert,
+  Image,
+  Pressable,
+  SafeAreaView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { styles } from "./loginStyle"; // your existing styles
 
-const { width: screenWidth } = Dimensions.get("window");
+const API_URL = "http://192.168.0.62:8000"; // replace with your backend IP
 
-export default function Index() {
+export default function Login() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert("Error", "Please enter username and password");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const formBody = new URLSearchParams();
+      formBody.append("grant_type", "password"); // required by OAuth2
+      formBody.append("username", username);
+      formBody.append("password", password);
+
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formBody.toString(),
+      });
+
+      const data = await response.json();
+      console.log("Login response:", data);
+
+      if (response.ok) {
+        Alert.alert("Success", "Logged in successfully");
+        // TODO: store access token if needed
+        router.replace("/homepage"); // redirect to main app
+      } else {
+        Alert.alert("Login failed", JSON.stringify(data));
+      }
+    } catch (err) {
+      console.error("Network error:", err);
+      Alert.alert("Error", "Unable to connect to server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      
-      {/* Athlete Image*/}
-      <View
-        style={{
-            width: screenWidth,
-            height: 500,
-            overflow: "hidden",
-        }}
-        >
-        <Image
-            source={require("../assets/images/athlete-resting.png")}
-            style={{
-            width: screenWidth,
-            height: 500,
-            resizeMode: "cover",
-            }}
-        />
+    <SafeAreaView style={styles.safe}>
+      {/* Shadow wrapper */}
+      <View style={styles.shadowWrapper}>
+        {/* Inner login panel */}
+        <View style={styles.container}>
+          {/* Top image */}
+          <View style={styles.imgBox}>
+            <Image
+              source={require("../assets/images/athlete-resting.png")}
+              style={styles.image}
+            />
+          </View>
+
+          {/* Login content */}
+          <View style={styles.contentBox}>
+            <Text style={styles.title}>Login</Text>
+
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Username</Text>
+              <TextInput
+                placeholder="Enter your username"
+                placeholderTextColor="#999"
+                autoCapitalize="none"
+                value={username}
+                onChangeText={setUsername}
+                style={styles.input}
+              />
+            </View>
+
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                placeholder="Enter your password"
+                placeholderTextColor="#999"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+                style={styles.input}
+              />
+            </View>
+
+            <Pressable
+              onPress={handleLogin}
+              style={[styles.button, loading && { opacity: 0.6 }]}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>
+                {loading ? "Logging in..." : "Login"}
+              </Text>
+            </Pressable>
+
+            {/* Social login buttons */}
+            <View style={styles.socialContainer}>
+              <Pressable style={styles.socialButton}>
+                <FontAwesome5 name="google" size={24} color="#5c6ebe" />
+              </Pressable>
+
+              <Pressable style={styles.socialButton}>
+                <FontAwesome name="phone" size={24} color="#5c6ebe" />
+              </Pressable>
+
+              <Pressable style={styles.socialButton}>
+                <FontAwesome name="envelope" size={24} color="#5c6ebe" />
+              </Pressable>
+            </View>
+
+            <Pressable onPress={() => router.push("/register")}>
+              <Text style={styles.register}>
+                Not with us?{" "}
+                <Text style={styles.registerLink}>Register</Text>
+              </Text>
+            </Pressable>
+          </View>
         </View>
-
-
-      {/* Content container with padding */}
-      <View style={{ flex: 1, paddingHorizontal: 24, justifyContent: "flex-start" }}>
-        
-        {/* Title */}
-        <Text style={{ fontSize: 28, fontWeight: "500", marginBottom: 8, marginTop: 32, textAlign: "center" }}>
-          Welcome to Sana Sports
-        </Text>
-
-        <Text style={{ fontSize: 16, color: "#000", marginBottom: 20, textAlign: "center" }}>
-          Log in to continue
-        </Text>
-
-        {/* Login Button */}
-        <Pressable
-          onPress={() => router.push("/login")}
-          style={{
-            backgroundColor: "#000",
-            padding: 16,
-            width: 300,
-            alignSelf: "center",
-            borderRadius: 12,
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-            Login
-          </Text>
-        </Pressable>
-
-        {/* Register Option */}
-        <Pressable onPress={() => router.push("/register")}>
-        <Text style={{ textAlign: "center", color: "#000" }}>
-            Don’t have an account?{" "}
-            <Text style={{ color: "blue" }}>Register</Text>
-        </Text>
-        </Pressable>
-
       </View>
     </SafeAreaView>
   );
