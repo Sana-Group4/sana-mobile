@@ -10,17 +10,17 @@ import {
 import { useState } from "react";
 import { router } from "expo-router";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import { styles } from "./loginStyle"; // your existing styles
+import { styles } from "./loginStyle";
 
-const API_URL = "http://192.168.0.62:8000"; // replace with your backend IP
+const API_URL = "http://192.168.0.62:8000";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!username || !password) {
+    if (!email || !password) {
       Alert.alert("Error", "Please enter username and password");
       return;
     }
@@ -30,7 +30,7 @@ export default function Login() {
     try {
       const formBody = new URLSearchParams();
       formBody.append("grant_type", "password"); // required by OAuth2
-      formBody.append("username", username);
+      formBody.append("username", email);
       formBody.append("password", password);
 
       const response = await fetch(`${API_URL}/auth/login`, {
@@ -44,7 +44,7 @@ export default function Login() {
 
       if (response.ok) {
         Alert.alert("Success", "Logged in successfully");
-        // TODO: store access token if needed
+
         router.replace("/homepage"); // redirect to main app
       } else {
         Alert.alert("Login failed", JSON.stringify(data));
@@ -76,13 +76,13 @@ export default function Login() {
             <Text style={styles.title}>Login</Text>
 
             <View style={styles.inputBox}>
-              <Text style={styles.label}>Username</Text>
+              <Text style={styles.label}>Email</Text>
               <TextInput
-                placeholder="Enter your username"
+                placeholder="Enter your email"
                 placeholderTextColor="#999"
                 autoCapitalize="none"
-                value={username}
-                onChangeText={setUsername}
+                value={email}
+                onChangeText={setEmail}
                 style={styles.input}
               />
             </View>

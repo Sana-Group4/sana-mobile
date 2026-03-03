@@ -16,12 +16,6 @@ export default function Register() {
   const [accountType, setAccountType] = useState<"coach" | "client">("client");
   const [loading, setLoading] = useState(false);
 
-  // auto generate username from first+last name
-  const generateUsername = (first: string, last: string) => {
-    const random = Math.floor(100 + Math.random() * 900);
-    return `${first}${last}${random}`.toLowerCase().replace(/\s/g, "");
-  };
-
   const handleRegister = async () => {
   if (!fname || !lname || !email || !password || !confirmPassword) {
     Alert.alert("Error", "Please fill in all fields");
@@ -35,7 +29,11 @@ export default function Register() {
 
   setLoading(true);
 
-  const username = generateUsername(fname, lname);
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const randomDigit = Math.floor(Math.random() * 2147483647);
+  const randomSuffix = Math.floor(100000 + Math.random() * 900000); 
+  const username = email
 
   const userType = accountType === "client" ? "Client" : "Coach";
 
@@ -44,8 +42,8 @@ export default function Register() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email,
-        phone: 0,
+        email: email,
+        phone: randomDigit,
         firstName: fname,
         lastName: lname,
         username,
@@ -58,7 +56,7 @@ export default function Register() {
     console.log("Register response:", text);
 
     if (response.ok) {
-      Alert.alert("Success", `Account created! Your username is: ${username}`);
+      Alert.alert("Success", `Account created! Please log in.`);
       router.replace("/");
     } else {
       Alert.alert("Error", text);
