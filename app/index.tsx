@@ -44,7 +44,6 @@ export default function Login() {
 
       if (response.ok) {
         Alert.alert("Success", "Logged in successfully");
-
         router.replace("/homepage"); // redirect to main app
       } else {
         Alert.alert("Login failed", JSON.stringify(data));
