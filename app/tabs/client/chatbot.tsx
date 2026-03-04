@@ -1,4 +1,5 @@
 import { router } from "expo-router";
+import { askGroq } from "../../utils/groqApi";
 import { useState } from "react";
 import {
   View,
@@ -15,19 +16,22 @@ export default function Chatbot() {
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [aiResponse, setAiResponse] = useState<string | null>(null);
 
-  const handleSubmit = () => {
-    if (!query.trim()) return;
+  const handleSubmit = async () => {
+  if (!query.trim()) return;
 
-    // store user query
-    setSubmittedQuery(query);
+  setSubmittedQuery(query);
+  setAiResponse("Thinking...");
 
-    // fake AI response (placeholder)
-    setAiResponse(
-      "This is a placeholder response. AI integration will be added later."
-    );
+  try {
+    const response = await askGroq(query);
+    setAiResponse(response);
+  } catch (error) {
+    setAiResponse("Something went wrong. Please try again.");
+    console.error(error);
+  }
 
-    setQuery("");
-  };
+  setQuery("");
+};
 
   const handleReset = () => {
     setSubmittedQuery(null);
@@ -52,7 +56,7 @@ export default function Chatbot() {
                 textAlign: "center",
               }}
             >
-              Ask Sana
+              Ask Sana about fitness & heatlh
             </Text>
 
             <TextInput
@@ -72,13 +76,25 @@ export default function Chatbot() {
             <Pressable
               onPress={handleSubmit}
               style={{
-                backgroundColor: "#3b82f6",
-                paddingVertical: 14,
-                borderRadius: 12,
+                marginTop: 12,
+                height: 50,
+                borderRadius: 25,
+                backgroundColor: "rgb(92,110,190)",
+                justifyContent: "center",
                 alignItems: "center",
+                shadowColor: "#5c6ebe",
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 3,
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+              <Text style={{
+                color: "#fff",
+                fontSize: 16,
+                fontWeight: "600",
+                fontFamily: Platform.OS === "ios" ? "Verdana" : "sans-serif",
+              }}>
                 Ask
               </Text>
             </Pressable>
@@ -88,37 +104,45 @@ export default function Chatbot() {
         {/* CHAT VIEW */}
         {submittedQuery && aiResponse && (
           <View style={{ flex: 1, justifyContent: "space-between" }}>
+            
             <View>
-              {/* AI Bubble (Left) */}
-              <View
-                style={{
-                  alignSelf: "flex-start",
-                  backgroundColor: "#f1f5f9",
-                  padding: 14,
-                  borderRadius: 16,
-                  borderTopLeftRadius: 4,
-                  marginBottom: 12,
-                  maxWidth: "80%",
-                }}
-              >
-                <Text style={{ fontSize: 16 }}>{aiResponse}</Text>
+              {/* USER MESSAGE */}
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", marginBottom: 12 }}>
+                
+                <View
+                  style={{
+                    alignSelf: "flex-end",
+                    backgroundColor: "rgb(92,110,190)",
+                    padding: 14,
+                    borderRadius: 16,
+                    borderTopRightRadius: 4,
+                    maxWidth: "75%",
+                  }}
+                >
+                  <Text style={{ fontSize: 16, color: "#fff" }}>
+                    {submittedQuery}
+                  </Text>
+                </View>
+
+                <Text style={{ fontSize: 22, marginLeft: 6 }}>👤</Text>
               </View>
 
-              {/* User Bubble (Right) */}
-              <View
-                style={{
-                  alignSelf: "flex-end",
-                  backgroundColor: "#3b82f6",
-                  padding: 14,
-                  borderRadius: 16,
-                  borderTopRightRadius: 4,
-                  marginBottom: 12,
-                  maxWidth: "80%",
-                }}
-              >
-                <Text style={{ fontSize: 16, color: "#fff" }}>
-                  {submittedQuery}
-                </Text>
+              {/* AI MESSAGE */}
+              <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+                <Text style={{ fontSize: 22, marginRight: 6 }}>🤖</Text>
+
+                <View
+                  style={{
+                    alignSelf: "flex-start",
+                    backgroundColor: "#f1f5f9",
+                    padding: 14,
+                    borderRadius: 16,
+                    borderTopLeftRadius: 4,
+                    maxWidth: "75%",
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>{aiResponse}</Text>
+                </View>
               </View>
             </View>
 
@@ -126,19 +150,32 @@ export default function Chatbot() {
             <Pressable
               onPress={handleReset}
               style={{
-                backgroundColor: "#111",
-                paddingVertical: 14,
-                borderRadius: 12,
+                marginBottom: 30,
+                marginTop: 20,
+                height: 50,
+                borderRadius: 25,
+                backgroundColor: "rgb(92,110,190)",
+                justifyContent: "center",
                 alignItems: "center",
+                shadowColor: "#5c6ebe",
+                shadowOffset: { width: 2, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 3,
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 16 }}>
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: 16,
+                  fontWeight: "600",
+                  fontFamily: Platform.OS === "ios" ? "Verdana" : "sans-serif",
+                }}
+              >
                 Ask Again
               </Text>
             </Pressable>
-            
           </View>
-          
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
