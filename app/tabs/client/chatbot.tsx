@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router } from "expo-router"; //test
 import { askGroq } from "../../utils/groqApi";
 import { useState } from "react";
 import {
