@@ -11,18 +11,39 @@ import { useState } from "react";
 import { router } from "expo-router";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "./loginStyle";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import { useEffect } from "react";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const API_URL = "http://192.168.0.62:8000";
-
-const handleGoogleLogin = async () => {
-  Alert.alert("Google Login", "Google auth coming soon");
-};
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+    });
+
+    useEffect(() => {
+      if (response?.type === "success") {
+        const { authentication } = response;
+        console.log("Google token:", authentication?.accessToken);
+
+        Alert.alert("Success", "Google login successful");
+
+        // later you send this token to backend
+      }
+    }, [response]);
+
+
+const handleGoogleLogin = async () => {
+  await promptAsync();
+};
 
   const handleLogin = async () => {
     if (!email || !password) {
