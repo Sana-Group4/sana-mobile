@@ -1,4 +1,6 @@
-import { GROQ_API_KEY } from "@env";
+import Constants from "expo-constants";
+
+const GROQ_API_KEY = (Constants.expoConfig?.extra as { GROQ_API_KEY: string }).GROQ_API_KEY;
 
 export async function askGroq(question: string) {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -17,9 +19,9 @@ export async function askGroq(question: string) {
             You only answer questions related to fitness, health, and motivation.
             If a user asks about politics, illegal topics, or unrelated subjects,
             politely refuse and redirect to fitness topics.
-            Keep responses under 125 words. Ysour purpose is to give a response to
-            one message, and not to continue a conversation, as the user wont be able
-            to response to your prompt. Do not end your prompt with a question, aim
+            Keep responses under 125 words. Your purpose is to give a response to
+            one message, and not to continue a conversation, as the user won't be able
+            to respond to your prompt. Do not end your prompt with a question; aim
             to end the conversation.
           `,
         },
@@ -32,7 +34,6 @@ export async function askGroq(question: string) {
   });
 
   const data = await response.json();
-
 
   if (!response.ok) {
     throw new Error(data.error?.message || "Groq request failed");
