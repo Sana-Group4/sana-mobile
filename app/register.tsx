@@ -13,7 +13,6 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [accountType, setAccountType] = useState<"coach" | "client">("client");
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
@@ -35,20 +34,18 @@ export default function Register() {
   const randomSuffix = Math.floor(100000 + Math.random() * 900000); 
   const username = email
 
-  const userType = accountType === "client" ? "Client" : "Coach";
 
   try {
     const response = await fetch(`${API_URL}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email: email,
+        email: normalizedEmail,
         phone: randomDigit,
         firstName: fname,
         lastName: lname,
         username,
         password,
-        userType,
       }),
     });
 
@@ -111,44 +108,6 @@ export default function Register() {
                 onChangeText={setEmail}
               />
             </View>
-
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ marginBottom: 8, fontWeight: "300", color: "#333" }}>
-              Account Type
-            </Text>
-            <View style={{ flexDirection: "row" }}>
-              <Pressable
-                onPress={() => setAccountType("client")}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: accountType === "client" ? "blue" : "#ddd",
-                  borderRadius: 12,
-                  marginRight: 8,
-                  backgroundColor: accountType === "client" ? "#e0f0ff" : "#fff",
-                  alignItems: "center",
-                }}
-              >
-                <Text>Client</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => setAccountType("coach")}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: accountType === "coach" ? "blue" : "#ddd",
-                  borderRadius: 12,
-                  backgroundColor: accountType === "coach" ? "#e0f0ff" : "#fff",
-                  alignItems: "center",
-                }}
-              >
-                <Text>Coach</Text>
-              </Pressable>
-            </View>
-          </View>
 
             <View style={styles.inputBox}>
               <Text style={styles.label}>Password</Text>

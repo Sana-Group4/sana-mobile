@@ -14,10 +14,15 @@ import { styles } from "./loginStyle";
 
 const API_URL = "http://192.168.0.62:8000";
 
+const handleGoogleLogin = async () => {
+  Alert.alert("Google Login", "Google auth coming soon");
+};
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -44,8 +49,13 @@ export default function Login() {
 
       if (response.ok) {
         Alert.alert("Success", "Logged in successfully");
-        router.replace("/tabs/client/client_home"); // redirect to main app
-      } else {
+
+        if (data.isCoach) {
+          router.replace("/tabs/coach/coach_home");
+        } else {
+          router.replace("/tabs/client/client_home");
+        }
+      }else {
         Alert.alert("Login failed", JSON.stringify(data));
       }
     } catch (err) {
@@ -75,11 +85,19 @@ export default function Login() {
             <Text style={styles.title}>Login</Text>
 
             <View style={styles.inputBox}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>
+                {loginMethod === "email" ? "Email" : "Phone"}
+              </Text>
+
               <TextInput
-                placeholder="Enter your email"
+                placeholder={
+                  loginMethod === "email"
+                    ? "Enter your email"
+                    : "Enter your phone number"
+                }
                 placeholderTextColor="#999"
                 autoCapitalize="none"
+                keyboardType={loginMethod === "phone" ? "phone-pad" : "email-address"}
                 value={email}
                 onChangeText={setEmail}
                 style={styles.input}
@@ -109,16 +127,25 @@ export default function Login() {
             </Pressable>
 
             {/* Social login buttons */}
-            <View style={styles.socialContainer}>
-              <Pressable style={styles.socialButton}>
+           <View style={styles.socialContainer}>
+              <Pressable
+                style={styles.socialButton}
+                onPress={handleGoogleLogin}
+              >
                 <FontAwesome5 name="google" size={24} color="#5c6ebe" />
               </Pressable>
 
-              <Pressable style={styles.socialButton}>
+              <Pressable
+                style={styles.socialButton}
+                onPress={() => setLoginMethod("phone")}
+              >
                 <FontAwesome name="phone" size={24} color="#5c6ebe" />
               </Pressable>
 
-              <Pressable style={styles.socialButton}>
+              <Pressable
+                style={styles.socialButton}
+                onPress={() => setLoginMethod("email")}
+              >
                 <FontAwesome name="envelope" size={24} color="#5c6ebe" />
               </Pressable>
             </View>
