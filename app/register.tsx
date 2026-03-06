@@ -32,7 +32,7 @@ export default function Register() {
   const normalizedEmail = email.trim().toLowerCase();
   const randomDigit = Math.floor(Math.random() * 2147483647);
   const randomSuffix = Math.floor(100000 + Math.random() * 900000); 
-  const username = email
+  const username = normalizedEmail;
 
 
   try {
@@ -46,6 +46,7 @@ export default function Register() {
         lastName: lname,
         username,
         password,
+        isCoach: false
       }),
     });
 
@@ -54,7 +55,7 @@ export default function Register() {
 
     if (response.ok) {
       Alert.alert("Success", `Account created! Please log in.`);
-      router.replace("/");
+      router.replace("/choose-coach");
     } else {
       Alert.alert("Error", text);
     }
