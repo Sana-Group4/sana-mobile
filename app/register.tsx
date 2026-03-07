@@ -1,8 +1,7 @@
-import { SafeAreaView, View, Text, TextInput, Pressable, Image, Alert } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView, View, Text, TextInput, Pressable, Alert } from "react-native";
 import { useState } from "react";
 import { router } from "expo-router";
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker"
 import { styles } from "./loginStyle";
 
 const API_URL = "http://192.168.0.62:8000";
@@ -16,56 +15,56 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-  if (!fname || !lname || !email || !password || !confirmPassword) {
-    Alert.alert("Error", "Please fill in all fields");
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    Alert.alert("Error", "Passwords do not match");
-    return;
-  }
-
-  setLoading(true);
-
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const randomDigit = Math.floor(Math.random() * 2147483647);
-  const randomSuffix = Math.floor(100000 + Math.random() * 900000); 
-  const username = normalizedEmail;
-
-
-  try {
-    const response = await fetch(`${API_URL}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: normalizedEmail,
-        phone: randomDigit,
-        firstName: fname,
-        lastName: lname,
-        username,
-        password,
-        isCoach: false
-      }),
-    });
-
-    const text = await response.text();
-    console.log("Register response:", text);
-
-    if (response.ok) {
-      Alert.alert("Success", `Account created! Please log in.`);
-      router.replace("/choose-coach");
-    } else {
-      Alert.alert("Error", text);
+    if (!fname || !lname || !email || !password || !confirmPassword) {
+      Alert.alert("Error", "Please fill in all fields");
+      return;
     }
-  } catch (err) {
-    console.error("Network error:", err);
-    Alert.alert("Error", "Unable to connect to server");
-  } finally {
-    setLoading(false);
-  }
-};
+    if (password !== confirmPassword) {
+      Alert.alert("Error", "Passwords do not match");
+      return;
+    }
+
+    setLoading(true);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const randomDigit = Math.floor(Math.random() * 2147483647);
+    const username = normalizedEmail;
+
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          phone: randomDigit,
+          firstName: fname,
+          lastName: lname,
+          username,
+          password,
+          isCoach: false
+        }),
+      });
+
+      const data = await response.json();
+      console.log("Register response:", data);
+
+      if (response.ok) {
+        // STORE token securely
+        await AsyncStorage.setItem('accessToken', data.access_token);
+
+        // go to ChooseCoach
+        router.replace("/choose-coach");
+      } else {
+        Alert.alert("Error", data.detail || JSON.stringify(data));
+      }
+    } catch (err) {
+      console.error("Network error:", err);
+      Alert.alert("Error", "Unable to connect to server");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <SafeAreaView style={styles.safe}>
