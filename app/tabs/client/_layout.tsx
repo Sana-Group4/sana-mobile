@@ -32,13 +32,8 @@ export default function TabLayout() {
           tabBarIcon: () => <Text>📊</Text>,
         }}
       />
-      <Tabs.Screen
-        name="coach"
-        options={{
-          title: "Coach",
-          tabBarIcon: () => <Text>👤</Text>,
-        }}
-      />
+      {/* Coach tab removed for client navbar */}
+      {/* manual-input is intentionally NOT included in the tab bar */}
       <Tabs.Screen
         name="settings"
         options={{

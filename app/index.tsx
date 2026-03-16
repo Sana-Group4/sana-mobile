@@ -1,22 +1,22 @@
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
+import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import { useState } from "react";
 import {
+  Alert,
+  Image,
+  Pressable,
   SafeAreaView,
-  View,
   Text,
   TextInput,
-  Pressable,
-  Image,
-  Alert,
+  View,
 } from "react-native";
-import { useState, useEffect } from "react";
-import { router } from "expo-router";
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "./loginStyle";
-import * as WebBrowser from "expo-web-browser";
-import * as Linking from "expo-linking";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = "http://192.168.1.103:8000";
 
 export default function Login() {
   const [email, setEmail] = useState("");

@@ -1,22 +1,35 @@
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import {
-    loadHealthSnapshot,
-    openHealthConnectSettings,
-    requestHealthPermissionsAndLoad,
-    type HealthLoadState,
-    type HealthSnapshot,
+  loadHealthSnapshot,
+  openHealthConnectSettings,
+  requestHealthPermissionsAndLoad,
+  type HealthLoadState,
+  type HealthSnapshot,
 } from "../../utils/healthData";
+// Manual input state for health and workout data
+const initialManualData = {
+  weight: '',
+  sleep: '',
+  steps: '',
+  calories: '',
+  workoutType: '',
+  workoutDuration: '',
+};
+  // Manual input state
+
+  const router = useRouter();
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -433,6 +446,16 @@ export default function AnalyticsScreen() {
             </Text>
           )}
         </View>
+        {/* Button to navigate to manual input page */}
+        <View style={styles.panel}>
+          <Text style={styles.panelTitle}>Manual Health & Workout Entry</Text>
+          <Pressable
+            style={[styles.actionButton, styles.actionButtonPrimary, { alignSelf: 'flex-start', marginTop: 8 }]}
+            onPress={() => router.push('/tabs/client/manual-input')}
+          >
+            <Text style={[styles.actionButtonText, styles.actionButtonPrimaryText]}>Input Data Manually</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -471,6 +494,16 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     marginBottom: 12,
     gap: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: '#fff',
+    minWidth: 90,
+    fontSize: 14,
   },
   actionButton: {
     borderRadius: 10,
