@@ -6,8 +6,12 @@ import {
   Pressable,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { router } from "expo-router";
 import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "./loginStyle";
@@ -50,6 +54,8 @@ export default function Login() {
 
   // --- Email/Password login ---
   const handleLogin = async () => {
+  // hide keyboard ui
+  Keyboard.dismiss();
   // temporarily blocking phone login
   if (loginMethod === "phone") {
     Alert.alert("Error", "Phone login not supported yet");
@@ -103,75 +109,106 @@ export default function Login() {
 };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.shadowWrapper}>
-        <View style={styles.container}>
-          <View style={styles.imgBox}>
-            <Image
-              source={require("../assets/images/athlete-resting.png")}
-              style={styles.image}
-            />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <SafeAreaView style={styles.safe}>
+          <View style={styles.shadowWrapper}>
+            <View style={styles.container}>
+              <View style={styles.imgBox}>
+                <Image
+                  source={require("../assets/images/athlete-resting.png")}
+                  style={styles.image}
+                />
+              </View>
+
+              <View style={styles.contentBox}>
+                <Text style={styles.title}>Login</Text>
+
+                <View style={styles.inputBox}>
+                  <Text style={styles.label}>
+                    {loginMethod === "email" ? "Email" : "Phone"}
+                  </Text>
+                  <TextInput
+                    placeholder={
+                      loginMethod === "email"
+                        ? "Enter your email"
+                        : "Enter your phone number"
+                    }
+                    placeholderTextColor="#999"
+                    autoCapitalize="none"
+                    keyboardType={
+                      loginMethod === "phone" ? "phone-pad" : "email-address"
+                    }
+                    value={email}
+                    onChangeText={setEmail}
+                    style={styles.input}
+                    returnKeyType="next"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                  />
+                </View>
+
+                <View style={styles.inputBox}>
+                  <Text style={styles.label}>Password</Text>
+                  <TextInput
+                    placeholder="Enter your password"
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                    style={styles.input}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
+                  />
+                </View>
+
+                <Pressable
+                  onPress={handleLogin}
+                  style={[styles.button, loading && { opacity: 0.6 }]}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>
+                    {loading ? "Logging in..." : "Login"}
+                  </Text>
+                </Pressable>
+
+                {/* Social login buttons */}
+                <View style={styles.socialContainer}>
+                  <Pressable
+                    style={styles.socialButton}
+                    onPress={handleGoogleLogin}
+                  >
+                    <FontAwesome5 name="google" size={24} color="#5c6ebe" />
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.socialButton}
+                    onPress={() => setLoginMethod("phone")}
+                  >
+                    <FontAwesome name="phone" size={24} color="#5c6ebe" />
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.socialButton}
+                    onPress={() => setLoginMethod("email")}
+                  >
+                    <FontAwesome name="envelope" size={24} color="#5c6ebe" />
+                  </Pressable>
+                </View>
+
+                <Pressable onPress={() => router.push("/register")}>
+                  <Text style={styles.register}>
+                    Not with us?{" "}
+                    <Text style={styles.registerLink}>Register</Text>
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
-
-          <View style={styles.contentBox}>
-            <Text style={styles.title}>Login</Text>
-
-            <View style={styles.inputBox}>
-              <Text style={styles.label}>{loginMethod === "email" ? "Email" : "Phone"}</Text>
-              <TextInput
-                placeholder={loginMethod === "email" ? "Enter your email" : "Enter your phone number"}
-                placeholderTextColor="#999"
-                autoCapitalize="none"
-                keyboardType={loginMethod === "phone" ? "phone-pad" : "email-address"}
-                value={email}
-                onChangeText={setEmail}
-                style={styles.input}
-              />
-            </View>
-
-            <View style={styles.inputBox}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                placeholder="Enter your password"
-                placeholderTextColor="#999"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                style={styles.input}
-              />
-            </View>
-
-            <Pressable
-              onPress={handleLogin}
-              style={[styles.button, loading && { opacity: 0.6 }]}
-              disabled={loading}
-            >
-              <Text style={styles.buttonText}>{loading ? "Logging in..." : "Login"}</Text>
-            </Pressable>
-
-            {/* Social login buttons */}
-            <View style={styles.socialContainer}>
-              <Pressable style={styles.socialButton} onPress={handleGoogleLogin}>
-                <FontAwesome5 name="google" size={24} color="#5c6ebe" />
-              </Pressable>
-
-              <Pressable style={styles.socialButton} onPress={() => setLoginMethod("phone")}>
-                <FontAwesome name="phone" size={24} color="#5c6ebe" />
-              </Pressable>
-
-              <Pressable style={styles.socialButton} onPress={() => setLoginMethod("email")}>
-                <FontAwesome name="envelope" size={24} color="#5c6ebe" />
-              </Pressable>
-            </View>
-
-            <Pressable onPress={() => router.push("/register")}>
-              <Text style={styles.register}>
-                Not with us? <Text style={styles.registerLink}>Register</Text>
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </SafeAreaView>
+        </SafeAreaView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
