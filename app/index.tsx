@@ -43,9 +43,9 @@ export default function Login() {
         console.log("Logged in:", token);
 
         if (isCoach) {
-          router.replace("/tabs/coach/coach_home");
+          router.replace("/tabs/coach/coach-home");
         } else {
-          router.replace("/tabs/client/client_home");
+          router.replace("/tabs/client/client-home");
         }
 }
     }
@@ -93,9 +93,9 @@ export default function Login() {
 
     if (res.ok) {
       if (data.isCoach) {
-        router.replace("/tabs/coach/coach_home");
+        router.replace("/tabs/client/client-home");
       } else {
-        router.replace("/tabs/client/client_home");
+        router.replace("/tabs/coach/coach-home");
       }
     } else {
       Alert.alert("Login failed", data.detail || "Unknown error");

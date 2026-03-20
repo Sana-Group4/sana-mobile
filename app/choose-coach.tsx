@@ -38,7 +38,7 @@ export default function ChooseCoach() {
       });
 
       if (res.ok) {
-        router.replace("/tabs/coach/coach_home");
+        router.replace("/tabs/coach/coach-home");
       } else {
         const errorData = await res.json();
         Alert.alert("Error", errorData.detail || "Unknown error");
@@ -52,7 +52,7 @@ export default function ChooseCoach() {
   };
 
   const continueAsClient = () => {
-    router.replace("/tabs/client/client_home");
+    router.replace("/tabs/client/client-home");
   };
 
   if (!accessToken) return null;
