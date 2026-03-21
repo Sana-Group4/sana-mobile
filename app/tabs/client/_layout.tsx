@@ -11,7 +11,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="client_home"
+        name="client-home"
         options={{
           title: "Home",
           tabBarIcon: ({ color, size }) => (
@@ -57,6 +57,30 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="account/change-password"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="account/edit-profile"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="account/add-device"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="account/notifications"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

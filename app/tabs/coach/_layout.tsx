@@ -59,6 +59,24 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="account/change-password"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="account/edit-profile"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="account/add-device"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

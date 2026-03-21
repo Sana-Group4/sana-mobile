@@ -17,6 +17,7 @@ import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { styles } from "./loginStyle";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -37,9 +38,10 @@ export default function Login() {
   if (result.type === "success" && result.url) {
       const data = Linking.parse(result.url);
       const token = data.queryParams?.token;
-      const isCoach = data.queryParams?.isCoach === "true";
+      const isCoach = data.queryParams?.is_coach === "true";
 
       if (token) {
+        await AsyncStorage.setItem("access_token", token as string);
         console.log("Logged in:", token);
 
         if (isCoach) {
@@ -92,10 +94,11 @@ export default function Login() {
     console.log("Login response:", data);
 
     if (res.ok) {
-      if (data.isCoach) {
-        router.replace("/tabs/client/client-home");
-      } else {
+      await AsyncStorage.setItem("access_token", data.access_token);
+      if (data.is_coach) {
         router.replace("/tabs/coach/coach-home");
+      } else {
+        router.replace("/tabs/client/client-home");
       }
     } else {
       Alert.alert("Login failed", data.detail || "Unknown error");
