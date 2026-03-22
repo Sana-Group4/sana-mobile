@@ -3,12 +3,13 @@ import {
   SafeAreaView,
   View,
   Text,
-  ScrollView,
+  FlatList,
   Pressable,
   Alert,
   TextInput,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
 const API_URL = "http://192.168.0.62:8000";
 
@@ -17,39 +18,29 @@ export default function ClientsScreen() {
   const [loading, setLoading] = useState(true);
   const [clientId, setClientId] = useState("");
 
+  const router = useRouter(); // ✅ FIX
+
   // ---------------- LOAD CLIENTS ----------------
+  const loadClients = async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+
+      const res = await fetch(`${API_URL}/api/coach/clients`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      setClients(data);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadClients = async () => {
-      try {
-        const token = await AsyncStorage.getItem("access_token");
-
-        if (!token) {
-          Alert.alert("Error", "No auth token found");
-          return;
-        }
-
-        const res = await fetch(`${API_URL}/api/coach/clients`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          Alert.alert("Error", data.detail || "Failed to load clients");
-          return;
-        }
-
-        setClients(data);
-      } catch (err) {
-        console.log(err);
-        Alert.alert("Error", "Something went wrong");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadClients();
   }, []);
 
@@ -57,11 +48,6 @@ export default function ClientsScreen() {
   const addClient = async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
-
-      if (!clientId.trim()) {
-        Alert.alert("Error", "Please enter a client ID");
-        return;
-      }
 
       const cleanId = parseInt(clientId, 10);
 
@@ -80,37 +66,66 @@ export default function ClientsScreen() {
         }
       );
 
-      const data = await res.json();
-
       if (!res.ok) {
-        Alert.alert("Error", data.detail || "Failed to add client");
+        const data = await res.json();
+        Alert.alert("Error", data.detail);
         return;
       }
 
-      Alert.alert("Success", "Client added!");
-
       setClientId("");
-
-      // refresh list
-      const refreshed = await fetch(`${API_URL}/api/coach/clients`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const updated = await refreshed.json();
-      setClients(updated);
+      loadClients();
     } catch (err) {
-      console.log(err);
       Alert.alert("Error", "Something went wrong");
     }
+  };
+
+  // ---------------- REMOVE CLIENT ----------------
+  const removeClient = (id: number) => {
+    Alert.alert(
+      "Remove Client",
+      "Are you sure you want to remove this client?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem("access_token");
+
+              await fetch(
+                `${API_URL}/api/coach/remove-client?client_id=${id}`,
+                {
+                  method: "DELETE",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              loadClients();
+            } catch (err) {
+              Alert.alert("Error", "Failed to remove client");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // ---------------- VIEW CLIENT ----------------
+  const viewClient = (client: any) => {
+    router.push({
+      pathname: "/tabs/coach/client-info/client-details",
+      params: { client: JSON.stringify(client) },
+    });
   };
 
   // ---------------- UI ----------------
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>Loading clients...</Text>
+        <Text>Loading...</Text>
       </SafeAreaView>
     );
   }
@@ -118,52 +133,59 @@ export default function ClientsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       
-      {/* HEADER */}
-      <View style={{ padding: 16 }}>
-        <Text style={{ fontSize: 22, fontWeight: "700" }}>
-          My clients
-        </Text>
-      </View>
+      <Text style={{ fontSize: 22, fontWeight: "700", padding: 16 }}>
+        My Clients
+      </Text>
 
-      {/* CLIENT LIST */}
-      <ScrollView
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingBottom: 250,
-        }}
-      >
-        {clients.length === 0 ? (
-          <Text style={{ color: "#666" }}>
-            No clients yet. Add one below.
-          </Text>
-        ) : (
-          clients.map((client) => (
+      {/* GRID */}
+      <FlatList
+        data={clients}
+        numColumns={3}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={{ paddingHorizontal: 10 }}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => viewClient(item)}
+            style={{
+              width: "31%",
+              margin: "1%",
+              aspectRatio: 1,
+              backgroundColor: "#f9fafb",
+              borderRadius: 12,
+              padding: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#eee",
+            }}
+          >
+            {/* PROFILE ICON */}
             <View
-              key={client.id}
               style={{
-                padding: 14,
-                borderWidth: 1,
-                borderColor: "#eee",
-                borderRadius: 12,
-                marginBottom: 10,
-                backgroundColor: "#fafafa",
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "#efe6ff",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: 8,
               }}
             >
-              <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                {client.firstName} {client.lastName}
-              </Text>
-
-              <Text style={{ fontSize: 12, color: "#666" }}>
-                {client.email}
-              </Text>
-
-              <Text style={{ fontSize: 11, color: "#999" }}>
-                ID: {client.id}
-              </Text>
+              <Text style={{ fontSize: 20 }}>👤</Text>
             </View>
-          ))
+
+            {/* NAME */}
+            <Text style={{ fontWeight: "600", fontSize: 13 }}>
+              {item.firstName}
+            </Text>
+
+            {/* ID */}
+            <Text style={{ fontSize: 10, color: "#666" }}>
+              ID: {item.id}
+            </Text>
+          </Pressable>
         )}
-      </ScrollView>
+      />
 
       {/* INPUT */}
       <View
@@ -174,20 +196,18 @@ export default function ClientsScreen() {
           right: 16,
         }}
       >
-        <Text style={{ fontWeight: "600", marginBottom: 6 }}>
-          Add client by ID
-        </Text>
-
+        <Text>Add client by ID</Text>
         <TextInput
           value={clientId}
           onChangeText={setClientId}
-          placeholder="Enter client ID"
+          placeholder="Client ID"
           keyboardType="numeric"
           style={{
             borderWidth: 1,
             borderColor: "#ddd",
             borderRadius: 10,
             padding: 12,
+            marginTop: 6,
             backgroundColor: "#fff",
           }}
         />
@@ -206,14 +226,12 @@ export default function ClientsScreen() {
           onPress={addClient}
           style={{
             backgroundColor: "#5c6ebe",
-            paddingVertical: 14,
+            padding: 14,
             borderRadius: 12,
             alignItems: "center",
           }}
         >
-          <Text style={{ color: "#fff", fontWeight: "600" }}>
-            Add client
-          </Text>
+          <Text style={{ color: "#fff" }}>Add Client</Text>
         </Pressable>
       </View>
     </SafeAreaView>

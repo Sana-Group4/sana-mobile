@@ -77,6 +77,24 @@ export default function TabLayout() {
           href: null,
         }}
       />
+       <Tabs.Screen
+        name="client-info/client-screen"
+        options={{
+          href: null,
+        }}
+      />
+       <Tabs.Screen
+        name="client-info/client-details"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="client-info/add-activity"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

@@ -6,8 +6,29 @@ import {
   Text,
   View,
   Alert,
+  ViewStyle,
+  TextStyle,
 } from "react-native";
-
+import {
+  containerStyle,
+  loadingStyle,
+  cardStyle,
+  titleText,
+  profileCard,
+  avatarStyle,
+  nameText,
+  emailText,
+  idText,
+  editButton,
+  infoCard,
+  sectionTitle,
+  actionContainer,
+  actionButton,
+  logoutButton,
+  buttonText,
+  logoutText,
+  infoRow,
+} from "../coach/styles/settings-style";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_URL = "http://192.168.0.62:8000";
@@ -51,7 +72,6 @@ export default function Settings() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-              credentials: "include",
             });
 
             router.replace("/");
@@ -65,242 +85,86 @@ export default function Settings() {
 
   if (!user) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={loadingStyle}>
         <Text>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView style={{ flex: 1, paddingTop: 50 }}>
-
+    <View style={containerStyle}>
+      <ScrollView style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
+        
         {/* HEADER */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 28, fontWeight: "700", color: "#1a1a1a" }}>
-            Settings
-          </Text>
+        <View style={cardStyle}>
+          <Text style={titleText}>Profile</Text>
         </View>
 
-        {/* USER CARD */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
-          <View
-            style={{
-              backgroundColor: "#f8f9fa",
-              borderRadius: 20,
-              padding: 24,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#e5e7eb",
-            }}
+        {/* PROFILE CARD */}
+        <View style={profileCard}>
+          <View style={avatarStyle}>
+            <Text style={{ fontSize: 54 }}>👤</Text>
+          </View>
+
+          <Text style={nameText}>
+            {user.firstName} {user.lastName}
+          </Text>
+
+          <Text style={emailText}>{user.email}</Text>
+          <Text style={idText}>Your ID: {user.id}</Text>
+
+          <Pressable
+            onPress={() => router.push("/tabs/coach/account/edit-profile")}
+            style={editButton}
           >
-            <View
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                backgroundColor: "#dbeafe",
-                justifyContent: "center",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ fontSize: 48 }}>👤</Text>
-            </View>
-
-            <Text style={{ fontSize: 24, fontWeight: "600", marginBottom: 4 }}>
-              {user.firstName} {user.lastName}
-            </Text>
-
-            <Text style={{ fontSize: 16, color: "#6b7280", marginBottom: 16 }}>
-              {user.email}
-            </Text>
-
-            <Text style={{ fontSize: 13, color: "#9ca3af" }}>
-              Your ID: {user.id}
-            </Text>
-
-            {/* EDIT PROFILE */}
-            <Pressable
-              onPress={() =>
-                router.push("/tabs/coach/account/edit-profile")
-              }
-              style={{
-                backgroundColor: "#5c6ebe",
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 12,
-              }}
-            >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
-                Edit Profile
-              </Text>
-            </Pressable>
-          </View>
+            <Text style={buttonText}>Edit Details</Text>
+          </Pressable>
         </View>
 
-        {/* ACCOUNT INFO  */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 12 }}>
-            Account Information
-          </Text>
+        {/* ACCOUNT INFO */}
+        <View style={infoCard}>
+          <Text style={sectionTitle}>Account Information</Text>
 
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Phone</Text>
-            <Text>+44 7304 446372 📱</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Date of Birth</Text>
-            <Text>January 1, 1999 🎂</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Location</Text>
-            <Text>United Kingdom 📍</Text>
-          </View>
+          <InfoRow label="Phone" value="+44 7304 446372 📱" />
+          <InfoRow label="Date of Birth" value="01/01/1999 🎂" />
+          <InfoRow label="Location" value="United Kingdom 📍" />
         </View>
 
-        {/* STYLES */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 12 }}>
-            Preferences
-          </Text>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Notifications</Text>
-            <Text>🔔</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Privacy</Text>
-            <Text>🔒</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Language</Text>
-            <Text>🌐</Text>
-          </View>
-        </View>
-
-        {/* BUTTONS */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
-
+        {/* ACTION BUTTONS */}
+        <View style={actionContainer}>
           <Pressable
             onPress={() =>
               router.push("/tabs/coach/account/change-password")
             }
-            style={{
-              backgroundColor: "#5c6ebe",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              marginBottom: 12,
-            }}
+            style={[actionButton, { marginBottom: 12 }]}
           >
-           <Text style={{ fontSize: 16, color: "#fff", fontWeight: "600" }}>
-              Change Password
-            </Text>
+            <Text style={buttonText}>Change Password</Text>
           </Pressable>
 
           <Pressable
-            onPress={() =>
-              router.push("/tabs/coach/account/add-device")
-            }
-            style={{
-              backgroundColor: "#5c6ebe",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-            }}
+            onPress={() => router.push("/tabs/coach/account/add-device")}
+            style={actionButton}
           >
-            <Text style={{ fontSize: 16, color: "#fff", fontWeight: "600" }}>
-              Add Device
-            </Text>
+            <Text style={buttonText}>View Devices</Text>
           </Pressable>
 
-        </View>
-
-        {/* LOGOUT */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
-          <Pressable
-            onPress={handleLogout}
-            style={{
-              backgroundColor: "#fee",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#fcc",
-            }}
-          >
-            <Text style={{ color: "#c00", fontSize: 16, fontWeight: "600" }}>
-              Log Out
-            </Text>
+          <Pressable onPress={handleLogout} style={[logoutButton, { marginTop: 12 }]}>
+            <Text style={logoutText}>Log Out</Text>
           </Pressable>
         </View>
 
+        <View style={{ height: 40 }} />
       </ScrollView>
+    </View>
+  );
+}
+
+// ---------------- COMPONENT ----------------
+function InfoRow({ label, value }: any) {
+  return (
+    <View style={infoRow}>
+      <Text>{label}</Text>
+      <Text style={{ color: "#555" }}>{value}</Text>
     </View>
   );
 }
