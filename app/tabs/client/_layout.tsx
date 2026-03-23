@@ -8,9 +8,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: "rgb(92,110,190)", // purple when active
         tabBarInactiveTintColor: "#000", // black when inactive
-        animationEnabled: true,
-        tabBarHideOnKeyboard: true,
-        tabBarStyle: { transitionDuration: '120ms' },
+        // animationEnabled and tabBarStyle are not supported in expo-router Tabs
       }}
     >
       <Tabs.Screen
@@ -82,6 +80,12 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="account/notifications"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="account/bio-data-manual-input"
         options={{
           href: null,
         }}

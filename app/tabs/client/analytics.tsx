@@ -451,7 +451,7 @@ export default function AnalyticsScreen() {
           <Text style={styles.panelTitle}>Manual Health & Workout Entry</Text>
           <Pressable
             style={[styles.actionButton, styles.actionButtonPrimary, { alignSelf: 'flex-start', marginTop: 8 }]}
-            onPress={() => router.push('/tabs/client/manual-input')}
+            onPress={() => router.push('../tabs/client/manual-input')}
           >
             <Text style={[styles.actionButtonText, styles.actionButtonPrimaryText]}>Input Data Manually</Text>
           </Pressable>

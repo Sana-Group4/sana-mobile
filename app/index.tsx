@@ -7,16 +7,23 @@ import { useState } from "react";
 import {
   Alert,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
+
 import { styles } from "./loginStyle";
 
+import Constants from "expo-constants";
 WebBrowser.maybeCompleteAuthSession();
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function Login() {
   const [email, setEmail] = useState("");
