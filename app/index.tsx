@@ -5,17 +5,17 @@ import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import {
-  Alert,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
+    Alert,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 
 import { styles } from "./loginStyle";
@@ -41,6 +41,8 @@ export default function Login() {
       const data = Linking.parse(result.url);
       const token = data.queryParams?.token;
       const isCoach = data.queryParams?.is_coach === "true";
+
+      console.log("[LOGIN] is_coach (Google):", isCoach);
 
       if (token) {
         await AsyncStorage.setItem("access_token", token as string);
@@ -97,6 +99,7 @@ export default function Login() {
 
     if (res.ok) {
       await AsyncStorage.setItem("access_token", data.access_token);
+      console.log("[LOGIN] is_coach (email/password):", data.is_coach);
       if (data.is_coach) {
         router.replace("/tabs/coach/coach-home");
       } else {

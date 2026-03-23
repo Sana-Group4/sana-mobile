@@ -16,24 +16,38 @@ const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function ClientsScreen() {
   const [clients, setClients] = useState<any[]>([]);
+  const [invites, setInvites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [clientId, setClientId] = useState("");
 
   const router = useRouter(); // ✅ FIX
 
-  // ---------------- LOAD CLIENTS ----------------
+  // ---------------- LOAD CLIENTS & INVITES ----------------
   const loadClients = async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
 
-      const res = await fetch(`${API_URL}/api/coach/clients`, {
+      // Fetch clients
+      const resClients = await fetch(`${API_URL}/api/coach/clients`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      const dataClients = await resClients.json();
+      setClients(dataClients);
 
-      const data = await res.json();
-      setClients(data);
+      // Fetch invites (pending invited clients)
+      const resInvites = await fetch(`${API_URL}/api/coach/invites`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (resInvites.ok) {
+        const dataInvites = await resInvites.json();
+        setInvites(dataInvites);
+      } else {
+        setInvites([]);
+      }
     } catch (err) {
       console.log(err);
     } finally {
@@ -57,15 +71,12 @@ export default function ClientsScreen() {
         return;
       }
 
-      const res = await fetch(
-        `${API_URL}/api/coach/add-client?client_id=${cleanId}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${API_URL}/api/client-invite?client_id=${cleanId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         const data = await res.json();
@@ -133,12 +144,11 @@ export default function ClientsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      
       <Text style={{ fontSize: 22, fontWeight: "700", padding: 16 }}>
         My Clients
       </Text>
 
-      {/* GRID */}
+      {/* CLIENTS GRID */}
       <FlatList
         data={clients}
         numColumns={3}
@@ -160,7 +170,6 @@ export default function ClientsScreen() {
               borderColor: "#eee",
             }}
           >
-            {/* PROFILE ICON */}
             <View
               style={{
                 width: 40,
@@ -174,17 +183,61 @@ export default function ClientsScreen() {
             >
               <Text style={{ fontSize: 20 }}>👤</Text>
             </View>
-
-            {/* NAME */}
             <Text style={{ fontWeight: "600", fontSize: 13 }}>
               {item.firstName}
             </Text>
-
-            {/* ID */}
             <Text style={{ fontSize: 10, color: "#666" }}>
               ID: {item.id}
             </Text>
           </Pressable>
+        )}
+      />
+
+      {/* INVITES SECTION */}
+      <Text style={{ fontSize: 20, fontWeight: "700", padding: 16, paddingTop: 0 }}>
+        My Invites
+      </Text>
+      <FlatList
+        data={invites}
+        numColumns={3}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={{ paddingHorizontal: 10 }}
+        ListEmptyComponent={<Text style={{ textAlign: "center", color: "#888", marginTop: 8 }}>No invites</Text>}
+        renderItem={({ item }) => (
+          <View
+            style={{
+              width: "31%",
+              margin: "1%",
+              aspectRatio: 1,
+              backgroundColor: "#f0f6ff",
+              borderRadius: 12,
+              padding: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: "#b3d1ff",
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: "#dbeafe",
+                justifyContent: "center",
+                alignItems: "center",
+                marginBottom: 8,
+              }}
+            >
+              <Text style={{ fontSize: 20 }}>✉️</Text>
+            </View>
+            <Text style={{ fontWeight: "600", fontSize: 13 }}>
+              {item.firstName}
+            </Text>
+            <Text style={{ fontSize: 10, color: "#666" }}>
+              ID: {item.id}
+            </Text>
+          </View>
         )}
       />
 
