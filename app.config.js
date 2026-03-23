@@ -8,5 +8,6 @@ export default ({ config }) => ({
   extra: {
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     GROQ_API_URL: process.env.GROQ_API_URL,
+    API_URL: process.env.API_URL,
   },
 });

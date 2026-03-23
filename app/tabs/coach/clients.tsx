@@ -1,17 +1,18 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  SafeAreaView,
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  Alert,
-  TextInput,
+    Alert,
+    FlatList,
+    Pressable,
+    SafeAreaView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function ClientsScreen() {
   const [clients, setClients] = useState<any[]>([]);

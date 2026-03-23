@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { useEffect, useState } from "react";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { styles } from "./styles";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function EditProfile() {
   const [user, setUser] = useState<any>(null);

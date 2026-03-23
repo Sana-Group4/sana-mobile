@@ -1,21 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from "react-native";
-import { useState } from "react";
+import Constants from "expo-constants";
 import { router } from "expo-router";
+import { useState } from "react";
+import {
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
+} from "react-native";
 import { styles } from "./loginStyle";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function Register() {
   const [fname, setFname] = useState("");
@@ -62,6 +63,19 @@ export default function Register() {
 
       const data = await response.json();
       console.log("Register response:", data);
+
+      // Log JWT access token
+      if (data.access_token) {
+        console.log("JWT access token received:", data.access_token);
+      }
+
+      // Try to log refresh token from Set-Cookie header (if available)
+      const setCookie = response.headers.get('set-cookie');
+      if (setCookie) {
+        console.log("Refresh token Set-Cookie header:", setCookie);
+      } else {
+        console.log("No Set-Cookie header for refresh token found. (This is expected in React Native, as fetch does not expose HTTP-only cookies)");
+      }
 
       if (response.ok) {
         // STORE token securely

@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { View, Text, TextInput, Pressable, Alert, ScrollView } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 // Predefined activity templates
 const ACTIVITY_TEMPLATES = [

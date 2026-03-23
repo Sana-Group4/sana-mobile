@@ -1,10 +1,11 @@
-import { SafeAreaView, View, Text, Pressable, Alert } from "react-native";
-import { useState, useEffect } from "react";
-import { router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from "expo-constants";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { Alert, Pressable, SafeAreaView, Text, View } from "react-native";
 import { styles } from "./loginStyle";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function ChooseCoach() {
   const [accessToken, setAccessToken] = useState<string | null>(null);

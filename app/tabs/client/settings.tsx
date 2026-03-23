@@ -1,35 +1,81 @@
-import { useEffect, useState } from "react";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   Text,
   View,
-  Alert,
 } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { refreshAccessToken } from "../../utils/auth";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function Settings() {
   const [user, setUser] = useState<any>(null);
+  const [accountError, setAccountError] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
+        setAccountError(false);
         const token = await AsyncStorage.getItem("access_token");
-
-        const res = await fetch(`${API_URL}/api/account`, {
+        let res = await fetch(`${API_URL}/api/account`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        const data = await res.json();
-        setUser(data);
+        if (res.status === 401) {
+          const data = await res.json();
+          console.log("401 response from /api/account:", data);
+          // Fix: check for error_code inside detail object
+          const errorCode = data.error_code ?? data.detail?.error_code;
+          if (errorCode === 1) {
+            // Token expired, try to refresh
+            const refreshResult = await refreshAccessToken();
+            if (refreshResult.success) {
+              // Retry original request with new token
+              const newToken = refreshResult.access_token;
+              console.log("Access token updated:", newToken);
+              // Try again with new token
+              res = await fetch(`${API_URL}/api/account`, {
+                headers: {
+                  Authorization: `Bearer ${newToken}`,
+                },
+              });
+              if (res.ok) {
+                const retryData = await res.json();
+                setUser(retryData);
+                return;
+              } else {
+                setAccountError(true);
+                return;
+              }
+            } else {
+              Alert.alert("Session expired", "Please log in again.");
+              router.replace("/");
+              return;
+            }
+          } else {
+            setAccountError(true);
+            return;
+          }
+        }
+
+        if (res.ok) {
+          const data = await res.json();
+          console.log("Successfully retrieved account info:", data);
+          setUser(data);
+        } else {
+          setAccountError(true);
+        }
       } catch (err) {
         console.log(err);
+        setAccountError(true);
       }
     };
 
@@ -63,6 +109,13 @@ export default function Settings() {
     ]);
   };
 
+  if (accountError) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text>couldnt retrieve account info</Text>
+      </View>
+    );
+  }
   if (!user) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>

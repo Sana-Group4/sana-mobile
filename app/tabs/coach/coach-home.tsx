@@ -1,15 +1,16 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  TextInput,
-  FlatList,
+    FlatList,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 interface Client {
   id: string;
@@ -48,9 +49,15 @@ export default function CoachHome() {
       });
 
       const data = await res.json();
-      setClients(data);
+      if (Array.isArray(data)) {
+        setClients(data);
+      } else {
+        console.warn("Expected array for clients, got:", data);
+        setClients([]);
+      }
     } catch (err) {
       console.log("Failed to load clients:", err);
+      setClients([]);
     } finally {
       setLoadingClients(false);
     }

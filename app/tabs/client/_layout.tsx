@@ -1,5 +1,5 @@
-import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
 
 export default function TabLayout() {
   return (
@@ -8,6 +8,9 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: "rgb(92,110,190)", // purple when active
         tabBarInactiveTintColor: "#000", // black when inactive
+        animationEnabled: true,
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: { transitionDuration: '120ms' },
       }}
     >
       <Tabs.Screen

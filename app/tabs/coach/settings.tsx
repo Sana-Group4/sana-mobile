@@ -1,37 +1,36 @@
-import { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-  Alert,
-  ViewStyle,
-  TextStyle,
+    Alert,
+    Pressable,
+    ScrollView,
+    Text,
+    View
 } from "react-native";
 import {
-  containerStyle,
-  loadingStyle,
-  cardStyle,
-  titleText,
-  profileCard,
-  avatarStyle,
-  nameText,
-  emailText,
-  idText,
-  editButton,
-  infoCard,
-  sectionTitle,
-  actionContainer,
-  actionButton,
-  logoutButton,
-  buttonText,
-  logoutText,
-  infoRow,
+    actionButton,
+    actionContainer,
+    avatarStyle,
+    buttonText,
+    cardStyle,
+    containerStyle,
+    editButton,
+    emailText,
+    idText,
+    infoCard,
+    infoRow,
+    loadingStyle,
+    logoutButton,
+    logoutText,
+    nameText,
+    profileCard,
+    sectionTitle,
+    titleText,
 } from "../coach/styles/settings-style";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function Settings() {
   const [user, setUser] = useState<any>(null);
