@@ -99,13 +99,25 @@ export default function Login() {
 
     if (res.ok) {
       await AsyncStorage.setItem("access_token", data.access_token);
-      console.log("[LOGIN] is_coach (email/password):", data.is_coach);
-      if (data.is_coach) {
+
+      // STEP 1: fetch account
+      const accountRes = await fetch(`${API_URL}/api/account`, {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+        },
+      });
+
+      const account = await accountRes.json();
+
+      console.log("[LOGIN ACCOUNT]", account);
+
+      // STEP 2: route based on role
+      if (account.is_coach) {
         router.replace("/tabs/coach/coach-home");
       } else {
         router.replace("/tabs/client/client-home");
       }
-    } else {
+    }else {
       Alert.alert("Login failed", data.detail || "Unknown error");
     }
   } catch (err) {

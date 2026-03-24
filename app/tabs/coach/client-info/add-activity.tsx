@@ -31,10 +31,14 @@ export default function AddActivity() {
       const token = await AsyncStorage.getItem("access_token");
 
       const body = {
-        name: selected?.label,
+        name: selected.label,
         description,
         target_value: targetValue ? parseFloat(targetValue) : null,
-        unit: selected?.unit,
+        unit: selected.unit,
+        activity_type: "custom",
+        progress_value: 0,
+        status: "pending",
+        assigned_at: new Date().toISOString(),
       };
 
       const res = await fetch(

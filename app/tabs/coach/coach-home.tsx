@@ -2,15 +2,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useEffect, useState } from "react";
 import {
-    FlatList,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+import { KeyboardAvoidingView, Platform } from "react-native";
 
 const API_URL = Constants.expoConfig?.extra?.API_URL;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Client {
   id: string;
@@ -18,43 +23,51 @@ interface Client {
   lastName: string;
 }
 
-interface TodoItem {
-  id: string;
-  text: string;
-  completed: boolean;
+interface Activity {
+  id: number;
+  name: string;
+  description: string;
+  status: "PENDING" | "COMPLETED";
+  activity_type: string;
+  target_value: number | null;
+  progress_value: number;
+  unit: string | null;
+  assigned_at: string;
+  due_at: string | null;
+  user_id: number;
+  assigned_by_id: number;
+  assigned_by_coach: boolean;
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function CoachHome() {
-  // ---------------- CLIENTS ----------------
+  // ── State ──────────────────────────────────────────────────────────────────
   const [clients, setClients] = useState<Client[]>([]);
   const [loadingClients, setLoadingClients] = useState(true);
 
-  // ---------------- TODOS ----------------
-  const [todos, setTodos] = useState<TodoItem[]>([
-    { id: "1", text: "Review Sarah's workout plan", completed: false },
-    { id: "2", text: "Call Mike about nutrition goals", completed: true },
-  ]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loadingActivities, setLoadingActivities] = useState(true);
 
-  const [newTask, setNewTask] = useState("");
+  // Track IDs being deleted so we can show strike-through instantly
+  const [deletingIds, setDeletingIds] = useState<Set<number>>(new Set());
 
-  // ---------------- LOAD CLIENTS ----------------
+  // Add task modal
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newTaskName, setNewTaskName] = useState("");
+  const [newTaskDesc, setNewTaskDesc] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // ── Load clients ────────────────────────────────────────────────────────────
   const loadClients = async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
-
+      console.log("TOKEN DEBUG:", JSON.stringify(token));
       const res = await fetch(`${API_URL}/api/coach/clients`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setClients(data);
-      } else {
-        console.warn("Expected array for clients, got:", data);
-        setClients([]);
-      }
+      setClients(Array.isArray(data) ? data : []);
     } catch (err) {
       console.log("Failed to load clients:", err);
       setClients([]);
@@ -63,37 +76,121 @@ export default function CoachHome() {
     }
   };
 
+  // ── Load activities ─────────────────────────────────────────────────────────
+  const loadActivities = async () => {
+    try {
+     const token = await AsyncStorage.getItem("access_token");
+      console.log("TOKEN:", token);  
+      const res = await fetch(`${API_URL}/api/activities`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      // Only show self-assigned (not assigned_by_coach to someone else)
+      const selfAssigned = Array.isArray(data)
+        ? data.filter((a: Activity) => !a.assigned_by_coach)
+        : [];
+      setActivities(selfAssigned);
+    } catch (err) {
+      console.log("Failed to load activities:", err);
+    } finally {
+      setLoadingActivities(false);
+    }
+  };
+
   useEffect(() => {
     loadClients();
+    loadActivities();
   }, []);
 
-  // ---------------- TASKS ----------------
-  const toggleTodo = (id: string) => {
-    setTodos((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, completed: !t.completed } : t
-      )
-    );
+  // ── Create activity (self-assign) ───────────────────────────────────────────
+  const createActivity = async () => {
+    if (!newTaskName.trim()) return;
+    setSubmitting(true);
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+
+      // No assigned_to param → self-assign (backend assigns to user.id)
+      const res = await fetch(`${API_URL}/api/activities`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newTaskName.trim(),
+          description: newTaskDesc.trim() || "",
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        Alert.alert("Error", err.detail ?? "Failed to create task");
+        return;
+      }
+
+      setNewTaskName("");
+      setNewTaskDesc("");
+      setModalVisible(false);
+      loadActivities();
+    } catch {
+      Alert.alert("Error", "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const addTask = () => {
-    if (!newTask.trim()) return;
+  // ── Complete (delete) activity ──────────────────────────────────────────────
+  // NOTE: You need to add this endpoint to your backend:
+  //   DELETE /api/activities/{activity_id}
+  //   — verifies the activity belongs to the current user, then deletes it.
+  const completeActivity = async (activity: Activity) => {
+    // Optimistically strike through immediately
+    setDeletingIds((prev) => new Set(prev).add(activity.id));
 
-    const newTodo: TodoItem = {
-      id: Date.now().toString(),
-      text: newTask,
-      completed: false,
-    };
+    try {
+      const token = await AsyncStorage.getItem("access_token");
 
-    setTodos((prev) => [newTodo, ...prev]);
-    setNewTask("");
+      const res = await fetch(`${API_URL}/api/activities/${activity.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        // Revert optimistic update on failure
+        setDeletingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(activity.id);
+          return next;
+        });
+        Alert.alert("Error", "Failed to remove task");
+        return;
+      }
+
+      // Remove from local state after short delay so user sees the strike-through
+      setTimeout(() => {
+        setActivities((prev) => prev.filter((a) => a.id !== activity.id));
+        setDeletingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(activity.id);
+          return next;
+        });
+      }, 600);
+    } catch {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activity.id);
+        return next;
+      });
+      Alert.alert("Error", "Something went wrong");
+    }
   };
 
+  // ─── UI ────────────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView style={{ flex: 1, paddingTop: 50 }}>
-        
-        {/* ---------------- CLIENTS ---------------- */}
+
+        {/* ── My Clients ── */}
         <View style={{ marginBottom: 24 }}>
           <Text
             style={{
@@ -120,170 +217,328 @@ export default function CoachHome() {
             >
               {clients.map((client) => (
                 <View
-                key={client.id}
-                style={{
-                  backgroundColor: "#f8f9fa",
-                  borderRadius: 16,
-                  padding: 16,
-                  width: 160,
-                  borderWidth: 1,
-                  borderColor: "#e5e7eb",
-                }}
-              >
-                {/* ICON + NAME ROW */}
-                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-                  
+                  key={client.id}
+                  style={{
+                    backgroundColor: "#f8f9fa",
+                    borderRadius: 16,
+                    padding: 16,
+                    width: 160,
+                    borderWidth: 1,
+                    borderColor: "#e5e7eb",
+                  }}
+                >
                   <View
                     style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 17,
-                      backgroundColor: "#dbeafe",
-                      justifyContent: "center",
+                      flexDirection: "row",
                       alignItems: "center",
-                      marginRight: 8,
-                    }}
-                  >
-                    <Text style={{ fontSize: 16 }}>👤</Text>
-                  </View>
-
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      flexShrink: 1,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {client.firstName} {client.lastName}
-                  </Text>
-                </View>
-
-                {/* ID */}
-                <Text style={{ fontSize: 12, color: "#6b7280" }}>
-                  ID: {client.id}
-                </Text>
-
-                {/* progress placeholder */}
-                <View style={{ marginTop: 10 }}>
-                  <Text style={{ fontSize: 12, color: "#6b7280" }}>
-                    Progress
-                  </Text>
-
-                  <Text style={{ fontSize: 12, fontWeight: "600" }}>
-                    100%
-                  </Text>
-
-                  <View
-                    style={{
-                      height: 6,
-                      backgroundColor: "#e5e7eb",
-                      borderRadius: 3,
-                      marginTop: 4,
+                      marginBottom: 6,
                     }}
                   >
                     <View
                       style={{
-                        height: "100%",
-                        width: "100%",
-                        backgroundColor: "#3b82f6",
+                        width: 34,
+                        height: 34,
+                        borderRadius: 17,
+                        backgroundColor: "#dbeafe",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginRight: 8,
                       }}
-                    />
+                    >
+                      <Text style={{ fontSize: 16 }}>👤</Text>
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        flexShrink: 1,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {client.firstName} {client.lastName}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                    ID: {client.id}
+                  </Text>
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={{ fontSize: 12, color: "#6b7280" }}>
+                      Progress
+                    </Text>
+                    <Text style={{ fontSize: 12, fontWeight: "600" }}>
+                      100%
+                    </Text>
+                    <View
+                      style={{
+                        height: 6,
+                        backgroundColor: "#e5e7eb",
+                        borderRadius: 3,
+                        marginTop: 4,
+                      }}
+                    >
+                      <View
+                        style={{
+                          height: "100%",
+                          width: "100%",
+                          backgroundColor: "#3b82f6",
+                          borderRadius: 3,
+                        }}
+                      />
+                    </View>
                   </View>
                 </View>
-              </View>
               ))}
             </ScrollView>
           )}
         </View>
 
-        {/* ---------------- TASKS ---------------- */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 22, fontWeight: "600", marginBottom: 16 }}>
-            My Tasks
-          </Text>
-
-          {/* ADD TASK */}
-          <View style={{ flexDirection: "row", marginBottom: 16 }}>
-            <TextInput
-              value={newTask}
-              onChangeText={setNewTask}
-              placeholder="Add new task..."
-              style={{
-                flex: 1,
-                borderWidth: 1,
-                borderColor: "#e5e7eb",
-                borderRadius: 10,
-                padding: 10,
-                marginRight: 8,
-              }}
-            />
-
+        {/* ── My Tasks ── */}
+        <View style={{ paddingHorizontal: 16, marginBottom: 40 }}>
+          {/* Header row */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Text style={{ fontSize: 22, fontWeight: "600" }}>My Tasks</Text>
             <Pressable
-              onPress={addTask}
+              onPress={() => setModalVisible(true)}
               style={{
                 backgroundColor: "#3b82f6",
-                paddingHorizontal: 16,
-                justifyContent: "center",
+                paddingHorizontal: 14,
+                paddingVertical: 8,
                 borderRadius: 10,
               }}
             >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
-                Add
+              <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}>
+                + Add Task
               </Text>
             </Pressable>
           </View>
 
-          {/* TASK LIST */}
-          <FlatList
-            data={todos}
-            scrollEnabled={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  padding: 16,
-                  borderWidth: 1,
-                  borderColor: "#e5e7eb",
-                  borderRadius: 12,
-                  marginBottom: 12,
-                }}
-              >
-                <Pressable
-                  onPress={() => toggleTodo(item.id)}
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderWidth: 2,
-                    borderColor: "#3b82f6",
-                    marginRight: 12,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    backgroundColor: item.completed ? "#3b82f6" : "#fff",
-                  }}
-                >
-                  {item.completed && (
-                    <Text style={{ color: "#fff" }}>✓</Text>
-                  )}
-                </Pressable>
+          {loadingActivities ? (
+            <Text style={{ color: "#9ca3af" }}>Loading tasks...</Text>
+          ) : activities.length === 0 ? (
+            <View
+              style={{
+                padding: 24,
+                borderWidth: 1,
+                borderColor: "#e5e7eb",
+                borderRadius: 12,
+                borderStyle: "dashed",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ color: "#9ca3af", fontSize: 14 }}>
+                No tasks yet — add one above
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={activities}
+              scrollEnabled={false}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => {
+                const isDeleting = deletingIds.has(item.id);
+                return (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      padding: 16,
+                      borderWidth: 1,
+                      borderColor: isDeleting ? "#bbf7d0" : "#e5e7eb",
+                      borderRadius: 12,
+                      marginBottom: 12,
+                      backgroundColor: isDeleting ? "#f0fdf4" : "#fff",
+                    }}
+                  >
+                    {/* Checkbox */}
+                    <Pressable
+                      onPress={() => !isDeleting && completeActivity(item)}
+                      style={{
+                        width: 22,
+                        height: 22,
+                        borderWidth: 2,
+                        borderColor: isDeleting ? "#22c55e" : "#3b82f6",
+                        borderRadius: 4,
+                        marginRight: 12,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: isDeleting ? "#22c55e" : "#fff",
+                      }}
+                    >
+                      {isDeleting && (
+                        <Text style={{ color: "#fff", fontSize: 12 }}>✓</Text>
+                      )}
+                    </Pressable>
 
-                <Text
-                  style={{
-                    flex: 1,
-                    textDecorationLine: item.completed
-                      ? "line-through"
-                      : "none",
-                  }}
-                >
-                  {item.text}
-                </Text>
-              </View>
-            )}
-          />
+                    {/* Text */}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "600",
+                          color: isDeleting ? "#9ca3af" : "#111",
+                          textDecorationLine: isDeleting
+                            ? "line-through"
+                            : "none",
+                        }}
+                      >
+                        {item.name}
+                      </Text>
+                      {!!item.description && item.description.trim() && (
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#9ca3af",
+                            marginTop: 2,
+                            textDecorationLine: isDeleting
+                              ? "line-through"
+                              : "none",
+                          }}
+                        >
+                          {item.description}
+                        </Text>
+                      )}
+                    </View>
+
+                    {/* Due date if present */}
+                    {item.due_at && (
+                      <Text style={{ fontSize: 11, color: "#9ca3af" }}>
+                        {new Date(item.due_at).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                        })}
+                      </Text>
+                    )}
+                  </View>
+                );
+              }}
+            />
+          )}
         </View>
       </ScrollView>
+
+      {/* ── Add Task Modal ── */}
+     <Modal
+      visible={modalVisible}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setModalVisible(false)}
+    >
+      {/* Background */}
+      <Pressable
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          justifyContent: "flex-end",
+        }}
+        onPress={() => setModalVisible(false)}
+      >
+        {/* KEY FIX: keyboard aware container */}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ width: "100%" }}
+        >
+          {/* Stop background press */}
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <View
+              style={{
+                backgroundColor: "#fff",
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                padding: 24,
+                paddingBottom: 40,
+                maxHeight: "90%", // IMPORTANT: prevents keyboard overlap
+              }}
+            >
+              {/* Handle */}
+              <View
+                style={{
+                  width: 40,
+                  height: 4,
+                  backgroundColor: "#e5e7eb",
+                  borderRadius: 2,
+                  alignSelf: "center",
+                  marginBottom: 20,
+                }}
+              />
+
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  marginBottom: 16,
+                  color: "#111",
+                }}
+              >
+                New Task
+              </Text>
+
+              {/* Name */}
+              <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6 }}>
+                Task name *
+              </Text>
+
+              <TextInput
+                value={newTaskName}
+                onChangeText={setNewTaskName}
+                placeholder="e.g. Review client programme"
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#e5e7eb",
+                  borderRadius: 10,
+                  padding: 12,
+                  marginBottom: 14,
+                }}
+              />
+
+              {/* Description */}
+              <Text style={{ fontSize: 13, fontWeight: "600", marginBottom: 6 }}>
+                Description (optional)
+              </Text>
+
+              <TextInput
+                value={newTaskDesc}
+                onChangeText={setNewTaskDesc}
+                placeholder="Any extra details..."
+                multiline
+                style={{
+                  borderWidth: 1,
+                  borderColor: "#e5e7eb",
+                  borderRadius: 10,
+                  padding: 12,
+                  marginBottom: 20,
+                  minHeight: 80,
+                  textAlignVertical: "top",
+                }}
+              />
+
+              {/* Button */}
+              <Pressable
+                onPress={createActivity}
+                disabled={submitting || !newTaskName.trim()}
+                style={{
+                  backgroundColor:
+                    submitting || !newTaskName.trim() ? "rgba(92,110,190,0.7)" : "rgba(92,110,190,0.7)",
+                  padding: 14,
+                  borderRadius: 12,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "600" }}>
+                  {submitting ? "Saving..." : "Add Task"}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Pressable>
+    </Modal>
     </View>
   );
 }

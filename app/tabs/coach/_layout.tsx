@@ -6,12 +6,12 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: "rgb(92,110,190)", // purple when active
-        tabBarInactiveTintColor: "#000", // black when inactive
-        animationEnabled: true,
+        tabBarActiveTintColor: "rgb(92,110,190)",
+        tabBarInactiveTintColor: "#000",
         tabBarHideOnKeyboard: true,
-        // Simple fade animation for tab transitions
-        tabBarStyle: { transitionDuration: '120ms' },
+        tabBarStyle: {
+          transitionDuration: "120ms",
+        },
       }}
     >
       <Tabs.Screen
@@ -63,42 +63,14 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="account/change-password"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="account/edit-profile"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="account/add-device"
-        options={{
-          href: null,
-        }}
-      />
-       <Tabs.Screen
-        name="client-info/client-screen"
-        options={{
-          href: null,
-        }}
-      />
-       <Tabs.Screen
-        name="client-info/client-details"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="client-info/add-activity"
-        options={{
-          href: null,
-        }}
-      />
+
+      {/* hidden routes */}
+      <Tabs.Screen name="account/change-password" options={{ href: null }} />
+      <Tabs.Screen name="account/edit-profile" options={{ href: null }} />
+      <Tabs.Screen name="account/add-device" options={{ href: null }} />
+      <Tabs.Screen name="client-info/client-screen" options={{ href: null }} />
+      <Tabs.Screen name="client-info/client-details" options={{ href: null }} />
+      <Tabs.Screen name="client-info/add-activity" options={{ href: null }} />
     </Tabs>
   );
 }
