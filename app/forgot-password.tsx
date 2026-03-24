@@ -5,6 +5,9 @@ import {
   TextInput,
   Pressable,
   Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ScrollView,
 } from "react-native";
 import Constants from "expo-constants";
 import { router } from "expo-router";
@@ -25,12 +28,11 @@ export default function ForgotPassword() {
     }
 
     try {
-      await fetch(
-        `${API_URL}/auth/start-passsword-reset?email=${email}`,
-        { method: "POST" }
-      );
+      await fetch(`${API_URL}/auth/start-passsword-reset?email=${email}`, {
+        method: "POST",
+      });
 
-      Alert.alert("Check your email ", "Reset code sent");
+      Alert.alert("Check your email", "Reset code sent");
     } catch (err) {
       console.log(err);
       Alert.alert("Error", "Failed to send code");
@@ -45,16 +47,15 @@ export default function ForgotPassword() {
     }
 
     try {
-      const res = await fetch(
-        `${API_URL}/auth/verify-reset-code?code=${code}`,
-        { method: "POST" }
-      );
+      const res = await fetch(`${API_URL}/auth/verify-reset-code?code=${code}`, {
+        method: "POST",
+      });
 
       const data = await res.json();
 
       if (res.ok) {
         setResetToken(data.reset_token);
-        Alert.alert("Success ", "Code verified");
+        Alert.alert("Success", "Code verified");
       } else {
         Alert.alert("Error", data.detail);
       }
@@ -85,7 +86,7 @@ export default function ForgotPassword() {
       const data = await res.json();
 
       if (res.ok) {
-        Alert.alert("Success ", "Password updated");
+        Alert.alert("Success", "Password updated");
         router.replace("/");
       } else {
         Alert.alert("Error", data.detail);
@@ -97,51 +98,55 @@ export default function ForgotPassword() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 16, justifyContent: "center" }}>
-      <Text style={{ fontSize: 22, fontWeight: "700", marginBottom: 20 }}>
-        Reset Password 
-      </Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 16 }}
+      >
+        <View>
+          <Text style={{ fontSize: 22, fontWeight: "700", marginBottom: 20 }}>
+            Reset Password
+          </Text>
 
-      {/* EMAIL */}
-      <Text>Email</Text>
-      <TextInput
-        placeholder="Enter your email"
-        value={email}
-        onChangeText={setEmail}
-        style={input}
-      />
+          {/* EMAIL */}
+          <Text>Email</Text>
+          <TextInput
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            style={input}
+          />
+          <Pressable onPress={handleSendCode} style={button}>
+            <Text style={buttonText}>Send Code</Text>
+          </Pressable>
 
-      <Pressable onPress={handleSendCode} style={button}>
-        <Text style={buttonText}>Send Code ✉️</Text>
-      </Pressable>
+          {/* CODE */}
+          <Text>Reset Code</Text>
+          <TextInput
+            placeholder="Enter code"
+            value={code}
+            onChangeText={setCode}
+            style={input}
+          />
+          <Pressable onPress={handleVerifyCode} style={button}>
+            <Text style={buttonText}>Verify Code</Text>
+          </Pressable>
 
-      {/* CODE */}
-      <Text>Reset Code</Text>
-      <TextInput
-        placeholder="Enter code"
-        value={code}
-        onChangeText={setCode}
-        style={input}
-      />
-
-      <Pressable onPress={handleVerifyCode} style={button}>
-        <Text style={buttonText}>Verify Code ✅</Text>
-      </Pressable>
-
-      {/* NEW PASSWORD */}
-      <Text>New Password</Text>
-      <TextInput
-        placeholder="Enter new password"
-        value={newPassword}
-        onChangeText={setNewPassword}
-        secureTextEntry
-        style={input}
-      />
-
-      <Pressable onPress={handleResetPassword} style={button}>
-        <Text style={buttonText}>Reset Password 🔄</Text>
-      </Pressable>
-    </View>
+          {/* NEW PASSWORD */}
+          <Text>New Password</Text>
+          <TextInput
+            placeholder="Enter new password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            style={input}
+          />
+          <Pressable onPress={handleResetPassword} style={button}>
+            <Text style={buttonText}>Reset Password</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 

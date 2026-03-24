@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
 const API_URL = Constants.expoConfig?.extra?.API_URL;
 
@@ -16,6 +17,13 @@ const ACTIVITY_TEMPLATES = [
 ];
 
 export default function AddActivity() {
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: 16 }}>
+          {/* Your inputs go here */}
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   const { clientId } = useLocalSearchParams();
   const router = useRouter();
 

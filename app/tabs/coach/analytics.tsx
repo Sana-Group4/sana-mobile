@@ -18,6 +18,8 @@ import {
   type HealthLoadState,
   type HealthSnapshot,
 } from "../../utils/healthData";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
+
 // Manual input state for health and workout data
 const initialManualData = {
   weight: '',
@@ -111,6 +113,13 @@ function shortSourceName(source: string): string {
 }
 
 export default function AnalyticsScreen() {
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: 16 }}>
+          {/* Your inputs go here */}
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   const [selectedRange, setSelectedRange] = useState<RangeKey>("7D");
   const [snapshot, setSnapshot] = useState<HealthSnapshot | null>(null);
   const [loadState, setLoadState] = useState<HealthLoadState>("permissions-required");

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useEffect, useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, TextInput, View, Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
 import { styles } from "./styles";
 
 const API_URL = Constants.expoConfig?.extra?.API_URL;
@@ -90,49 +90,46 @@ export default function EditProfile() {
   if (!user) return <Text>Loading...</Text>;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Edit Profile</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1, padding: 16 }}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>Edit Profile</Text>
 
-      {/* First Name */}
-      <Text style={styles.label}>First Name</Text>
-      <TextInput
-        value={firstName}
-        onChangeText={setFirstName}
-        style={styles.input}
-      />
+          {/* First Name */}
+          <Text style={styles.label}>First Name</Text>
+          <TextInput value={firstName} onChangeText={setFirstName} style={styles.input} />
 
-      {/* Last Name */}
-      <Text style={styles.label}>Last Name</Text>
-      <TextInput
-        value={lastName}
-        onChangeText={setLastName}
-        style={styles.input}
-      />
+          {/* Last Name */}
+          <Text style={styles.label}>Last Name</Text>
+          <TextInput value={lastName} onChangeText={setLastName} style={styles.input} />
 
-      {/* Email */}
-      <Text style={styles.label}>Email</Text>
-      <TextInput
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
+          {/* Email */}
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            style={styles.input}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-      {/* Phone */}
-      <Text style={styles.label}>Phone Number</Text>
-      <TextInput
-        value={phone}
-        onChangeText={setPhone}
-        style={styles.input}
-        keyboardType="phone-pad"
-      />
+          {/* Phone */}
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            style={styles.input}
+            keyboardType="phone-pad"
+          />
 
-      <Pressable onPress={handleSave} style={styles.button}>
-        <Text style={{ color: "#fff", fontWeight: "600" }}>
-          Save Changes
-        </Text>
-      </Pressable>
-    </View>
+          <Pressable onPress={handleSave} style={styles.button}>
+            <Text style={{ color: "#fff", fontWeight: "600" }}>Save Changes</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   );
 }

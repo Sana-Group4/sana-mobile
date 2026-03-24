@@ -1,7 +1,15 @@
 import { View, Text, Pressable, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
 
 export default function ClientDetails() {
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: 16 }}>
+          {/* Your inputs go here */}
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   const { client } = useLocalSearchParams();
 
   const parsed = JSON.parse(client as string);

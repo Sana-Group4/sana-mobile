@@ -27,10 +27,18 @@ import {
   sectionTitle,
   titleText,
 } from "../coach/styles/settings-style";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
 const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function Settings() {
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: 16 }}>
+          {/* Your inputs go here */}
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {

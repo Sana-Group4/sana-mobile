@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
 const API_URL = Constants.expoConfig?.extra?.API_URL;
 
@@ -28,9 +29,8 @@ interface Booking {
   session_desc: string;
   date_time: string;
   session_duration: number;
-  status?: BookingStatus; // NOTE: add a `status` column to your Session model
-                          // and expose it via /coach-get-sessions if not already present.
-                          // Default should be "pending" on creation.
+  status?: BookingStatus;
+
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -64,6 +64,13 @@ const statusLabel: Record<BookingStatus, string> = {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ClientsScreen() {
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: 16 }}>
+          {/* Your inputs go here */}
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   const [clients, setClients] = useState<any[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);

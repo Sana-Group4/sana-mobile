@@ -2,10 +2,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Alert, Pressable, Text, View } from "react-native";
+import { Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
 
 const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function ClientDetails() {
+  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ padding: 16 }}>
+          {/* Your inputs go here */}
+        </View>
+      </ScrollView>
+    </TouchableWithoutFeedback>
   const { client } = useLocalSearchParams();
   const router = useRouter();
 
