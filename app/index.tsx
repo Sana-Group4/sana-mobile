@@ -231,6 +231,11 @@ export default function Login() {
                     <FontAwesome name="envelope" size={24} color="#5c6ebe" />
                   </Pressable>
                 </View>
+                <Pressable onPress={() => router.push("/forgot-password")}>
+                  <Text style={{ textAlign: "center", marginTop: 10, color: "#5c6ebe" }}>
+                    Forgot Password?
+                  </Text>
+                </Pressable>
 
                 <Pressable onPress={() => router.push("/register")}>
                   <Text style={styles.register}>

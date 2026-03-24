@@ -3,31 +3,29 @@ import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    Alert,
-    Pressable,
-    ScrollView,
-    Text,
-    View
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 import {
-    actionButton,
-    actionContainer,
-    avatarStyle,
-    buttonText,
-    cardStyle,
-    containerStyle,
-    editButton,
-    emailText,
-    idText,
-    infoCard,
-    infoRow,
-    loadingStyle,
-    logoutButton,
-    logoutText,
-    nameText,
-    profileCard,
-    sectionTitle,
-    titleText,
+  actionButton,
+  actionContainer,
+  avatarStyle,
+  buttonText,
+  cardStyle,
+  containerStyle,
+  editButton,
+  infoCard,
+  infoRow,
+  loadingStyle,
+  logoutButton,
+  logoutText,
+  nameText,
+  profileCard,
+  sectionTitle,
+  titleText,
 } from "../coach/styles/settings-style";
 
 const API_URL = Constants.expoConfig?.extra?.API_URL;
@@ -109,9 +107,6 @@ export default function Settings() {
             {user.firstName} {user.lastName}
           </Text>
 
-          <Text style={emailText}>{user.email}</Text>
-          <Text style={idText}>Your ID: {user.id}</Text>
-
           <Pressable
             onPress={() => router.push("/tabs/coach/account/edit-profile")}
             style={editButton}
@@ -124,21 +119,17 @@ export default function Settings() {
         <View style={infoCard}>
           <Text style={sectionTitle}>Account Information</Text>
 
-          <InfoRow label="Phone" value="+44 7304 446372 📱" />
-          <InfoRow label="Date of Birth" value="01/01/1999 🎂" />
-          <InfoRow label="Location" value="United Kingdom 📍" />
+        <InfoRow
+        label="Phone"
+        value={user.phone ? `${user.phone} ` : "Not added yet "}
+        />
+        <InfoRow label="Email" value={`${user.email} `} />
+        <InfoRow label="Personal ID" value={`${user.id} `} />
+
         </View>
 
         {/* ACTION BUTTONS */}
         <View style={actionContainer}>
-          <Pressable
-            onPress={() =>
-              router.push("/tabs/coach/account/change-password")
-            }
-            style={[actionButton, { marginBottom: 12 }]}
-          >
-            <Text style={buttonText}>Change Password</Text>
-          </Pressable>
 
           <Pressable
             onPress={() => router.push("/tabs/coach/account/add-device")}
@@ -147,7 +138,10 @@ export default function Settings() {
             <Text style={buttonText}>View Devices</Text>
           </Pressable>
 
-          <Pressable onPress={handleLogout} style={[logoutButton, { marginTop: 12 }]}>
+          <Pressable
+            onPress={handleLogout}
+            style={[logoutButton, { marginTop: 12 }]}
+          >
             <Text style={logoutText}>Log Out</Text>
           </Pressable>
         </View>
