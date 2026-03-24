@@ -64,7 +64,7 @@ export default function EditProfile() {
           firstName,
           lastName,
           email,
-          phone: phone ? Number(phone) : null,
+          phone: phone || null,
         }),
       });
 

@@ -5,17 +5,17 @@ import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import {
-    Alert,
-    Image,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    Text,
-    TextInput,
-    TouchableWithoutFeedback,
-    View,
+  Alert,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 import { styles } from "./loginStyle";
@@ -26,18 +26,18 @@ WebBrowser.maybeCompleteAuthSession();
 const API_URL = Constants.expoConfig?.extra?.API_URL;
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState(""); // email OR phone
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
 
   const handleGoogleLogin = async () => {
-  const result = await WebBrowser.openAuthSessionAsync(
-    `${API_URL}/auth/google/login`,
-    "sanamobile://auth"
-  );
+    const result = await WebBrowser.openAuthSessionAsync(
+      `${API_URL}/auth/google/login`,
+      "sanamobile://auth"
+    );
 
-  if (result.type === "success" && result.url) {
+    if (result.type === "success" && result.url) {
       const data = Linking.parse(result.url);
       const token = data.queryParams?.token;
       const isCoach = data.queryParams?.is_coach === "true";
@@ -46,87 +46,84 @@ export default function Login() {
 
       if (token) {
         await AsyncStorage.setItem("access_token", token as string);
-        console.log("Logged in:", token);
 
         if (isCoach) {
           router.replace("/tabs/coach/coach-home");
         } else {
           router.replace("/tabs/client/client-home");
         }
-}
+      }
     }
   };
-  
 
-  // --- Email/Password login ---
+  // --- Email/Phone + Password login ---
   const handleLogin = async () => {
-  // hide keyboard ui
-  Keyboard.dismiss();
-  // temporarily blocking phone login
-  if (loginMethod === "phone") {
-    Alert.alert("Error", "Phone login not supported yet");
-    return;
-  }
+    Keyboard.dismiss();
 
-  if (!email || !password) {
-    Alert.alert("Error", "Please enter username and password");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const formBody = new URLSearchParams();
-    formBody.append("grant_type", "password");
-    formBody.append("username", email);
-    formBody.append("password", password);
-
-    const res = await fetch(`${API_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formBody.toString(),
-    });
-
-    let data;
-    const text = await res.text();
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { detail: text }; // fallback
+    if (!username || !password) {
+      Alert.alert("Error", "Please enter username and password");
+      return;
     }
 
-    console.log("Login response:", data);
+    // simple phone validation
+    if (loginMethod === "phone" && username.length < 8) {
+      Alert.alert("Error", "Enter a valid phone number");
+      return;
+    }
 
-    if (res.ok) {
-      await AsyncStorage.setItem("access_token", data.access_token);
+    setLoading(true);
 
-      // STEP 1: fetch account
-      const accountRes = await fetch(`${API_URL}/api/account`, {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
+    try {
+      const formBody = new URLSearchParams();
+      formBody.append("grant_type", "password");
+      formBody.append("username", username);
+      formBody.append("password", password);
+
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formBody.toString(),
       });
 
-      const account = await accountRes.json();
-
-      console.log("[LOGIN ACCOUNT]", account);
-
-      // STEP 2: route based on role
-      if (account.is_coach) {
-        router.replace("/tabs/coach/coach-home");
-      } else {
-        router.replace("/tabs/client/client-home");
+      let data;
+      const text = await res.text();
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { detail: text };
       }
-    }else {
-      Alert.alert("Login failed", data.detail || "Unknown error");
+
+      console.log("Login response:", data);
+
+      if (res.ok) {
+        await AsyncStorage.setItem("access_token", data.access_token);
+
+        // fetch account
+        const accountRes = await fetch(`${API_URL}/api/account`, {
+          headers: {
+            Authorization: `Bearer ${data.access_token}`,
+          },
+        });
+
+        const account = await accountRes.json();
+
+        console.log("[LOGIN ACCOUNT]", account);
+
+        if (account.is_coach) {
+          router.replace("/tabs/coach/coach-home");
+        } else {
+          router.replace("/tabs/client/client-home");
+        }
+      } else {
+        Alert.alert("Login failed", data.detail || "Unknown error");
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Unable to connect to server");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error(err);
-    Alert.alert("Error", "Unable to connect to server");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <KeyboardAvoidingView
@@ -147,9 +144,10 @@ export default function Login() {
               <View style={styles.contentBox}>
                 <Text style={styles.title}>Login</Text>
 
+                {/* Username input */}
                 <View style={styles.inputBox}>
                   <Text style={styles.label}>
-                    {loginMethod === "email" ? "Email" : "Phone"}
+                    {loginMethod === "email" ? "Email" : "Phone Number"}
                   </Text>
                   <TextInput
                     placeholder={
@@ -160,16 +158,25 @@ export default function Login() {
                     placeholderTextColor="#999"
                     autoCapitalize="none"
                     keyboardType={
-                      loginMethod === "phone" ? "phone-pad" : "email-address"
+                      loginMethod === "phone"
+                        ? "phone-pad"
+                        : "email-address"
                     }
-                    value={email}
-                    onChangeText={setEmail}
+                    value={username}
+                    onChangeText={(text) => {
+                      if (loginMethod === "phone") {
+                        setUsername(text.replace(/[^0-9]/g, ""));
+                      } else {
+                        setUsername(text);
+                      }
+                    }}
                     style={styles.input}
                     returnKeyType="next"
                     onSubmitEditing={() => Keyboard.dismiss()}
                   />
                 </View>
 
+                {/* Password */}
                 <View style={styles.inputBox}>
                   <Text style={styles.label}>Password</Text>
                   <TextInput
@@ -184,6 +191,7 @@ export default function Login() {
                   />
                 </View>
 
+                {/* Login button */}
                 <Pressable
                   onPress={handleLogin}
                   style={[styles.button, loading && { opacity: 0.6 }]}
@@ -194,7 +202,7 @@ export default function Login() {
                   </Text>
                 </Pressable>
 
-                {/* Social login buttons */}
+                {/* Social buttons */}
                 <View style={styles.socialContainer}>
                   <Pressable
                     style={styles.socialButton}
@@ -205,14 +213,20 @@ export default function Login() {
 
                   <Pressable
                     style={styles.socialButton}
-                    onPress={() => setLoginMethod("phone")}
+                    onPress={() => {
+                      setLoginMethod("phone");
+                      setUsername("");
+                    }}
                   >
                     <FontAwesome name="phone" size={24} color="#5c6ebe" />
                   </Pressable>
 
                   <Pressable
                     style={styles.socialButton}
-                    onPress={() => setLoginMethod("email")}
+                    onPress={() => {
+                      setLoginMethod("email");
+                      setUsername("");
+                    }}
                   >
                     <FontAwesome name="envelope" size={24} color="#5c6ebe" />
                   </Pressable>
