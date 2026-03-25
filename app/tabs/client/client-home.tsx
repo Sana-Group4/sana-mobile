@@ -1,9 +1,8 @@
-import { router } from "expo-router";
-import { useState } from "react";
-import { Dimensions, Pressable, ScrollView, Text, View } from "react-native";
-import { LineChart } from "react-native-chart-kit";
-
-const screenWidth = Dimensions.get("window").width;
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 interface TodoItem {
   id: string;
@@ -12,14 +11,33 @@ interface TodoItem {
 }
 
 export default function ClientHome() {
-  // dummy data, in the future this will be fetched from the API
-  const [todos, setTodos] = useState<TodoItem[]>([
-    { id: "1", text: "Complete 30-minute cardio session", completed: false },
-    { id: "2", text: "Log today's meals in nutrition tracker", completed: true },
-    { id: "3", text: "Attend yoga class at 6 PM", completed: false },
-    { id: "4", text: "Drink 8 glasses of water", completed: false },
-    { id: "5", text: "Review coach's workout plan", completed: true },
-  ]);
+  const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        setLoadingTasks(true);
+        const token = await AsyncStorage.getItem("access_token");
+        const res = await fetch(`${API_URL}/api/client/tasks`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setTodos(data);
+        } else {
+          setTodos([]);
+        }
+      } catch (err) {
+        setTodos([]);
+      } finally {
+        setLoadingTasks(false);
+      }
+    };
+    fetchTasks();
+  }, []);
 
   const toggleTodo = (id: string) => {
     setTodos(
@@ -34,220 +52,167 @@ export default function ClientHome() {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
+  const completedCount = todos.filter((todo) => todo.completed).length;
+  const pendingCount = todos.length - completedCount;
+
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView style={{ flex: 1, paddingTop: 50 }}>
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 22, fontWeight: "600", marginBottom: 16, color: "#1a1a1a" }}>
-            Today's Overview
+    <View style={{ flex: 1, backgroundColor: "#f5f7fb" }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: 50, paddingHorizontal: 16, paddingBottom: 100 }}
+      >
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderRadius: 18,
+            padding: 18,
+            borderWidth: 1,
+            borderColor: "#e9edf4",
+            marginBottom: 16,
+          }}
+        >
+          <Text style={{ fontSize: 26, fontWeight: "700", color: "#111827" }}>
+            Current Tasks
           </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            <View
-              style={{
-                backgroundColor: "#eff6ff",
-                borderRadius: 16,
-                padding: 16,
-                width: (screenWidth - 44) / 2,
-                borderWidth: 1,
-                borderColor: "#dbeafe",
-              }}
-            >
-              <Text style={{ fontSize: 32, marginBottom: 4 }}>👟</Text>
-              <Text style={{ fontSize: 28, fontWeight: "700", color: "#1e40af", marginBottom: 4 }}>
-                8,234
-              </Text>
-              <Text style={{ fontSize: 14, color: "#6b7280" }}>Steps</Text>
-            </View>
+          <Text style={{ marginTop: 6, color: "#6b7280", fontSize: 14 }}>
+            Stay on track with what your coach assigned today.
+          </Text>
 
+          <View style={{ flexDirection: "row", marginTop: 14 }}>
             <View
               style={{
-                backgroundColor: "#f0fdf4",
-                borderRadius: 16,
-                padding: 16,
-                width: (screenWidth - 44) / 2,
-                borderWidth: 1,
-                borderColor: "#dcfce7",
+                backgroundColor: "#eef2ff",
+                paddingHorizontal: 10,
+                paddingVertical: 7,
+                borderRadius: 999,
+                marginRight: 8,
               }}
             >
-              <Text style={{ fontSize: 32, marginBottom: 4 }}>💪</Text>
-              <Text style={{ fontSize: 28, fontWeight: "700", color: "#15803d", marginBottom: 4 }}>
-                45 min
+              <Text style={{ color: "#3730a3", fontWeight: "600", fontSize: 12 }}>
+                Pending: {pendingCount}
               </Text>
-              <Text style={{ fontSize: 14, color: "#6b7280" }}>Exercise</Text>
             </View>
-
             <View
               style={{
-                backgroundColor: "#fff7ed",
-                borderRadius: 16,
-                padding: 16,
-                width: (screenWidth - 44) / 2,
-                borderWidth: 1,
-                borderColor: "#fed7aa",
+                backgroundColor: "#ecfdf5",
+                paddingHorizontal: 10,
+                paddingVertical: 7,
+                borderRadius: 999,
               }}
             >
-              <Text style={{ fontSize: 32, marginBottom: 4 }}>🔥</Text>
-              <Text style={{ fontSize: 28, fontWeight: "700", color: "#c2410c", marginBottom: 4 }}>
-                1,842
+              <Text style={{ color: "#166534", fontWeight: "600", fontSize: 12 }}>
+                Completed: {completedCount}
               </Text>
-              <Text style={{ fontSize: 14, color: "#6b7280" }}>Calories</Text>
-            </View>
-
-            <View
-              style={{
-                backgroundColor: "#f0f9ff",
-                borderRadius: 16,
-                padding: 16,
-                width: (screenWidth - 44) / 2,
-                borderWidth: 1,
-                borderColor: "#bae6fd",
-              }}
-            >
-              <Text style={{ fontSize: 32, marginBottom: 4 }}>💧</Text>
-              <Text style={{ fontSize: 28, fontWeight: "700", color: "#0369a1", marginBottom: 4 }}>
-                6/8
-              </Text>
-              <Text style={{ fontSize: 14, color: "#6b7280" }}>Glasses</Text>
             </View>
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 22, fontWeight: "600", marginBottom: 16, color: "#1a1a1a" }}>
-            Weekly Progress
-          </Text>
+        {loadingTasks ? (
           <View
             style={{
-              backgroundColor: "#f8f9fa",
-              borderRadius: 20,
-              padding: 16,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              elevation: 2,
+              backgroundColor: "#ffffff",
+              borderRadius: 14,
+              padding: 20,
+              borderWidth: 1,
+              borderColor: "#e5e7eb",
             }}
           >
-            <LineChart
-              data={{
-                labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-                datasets: [
-                  {
-                    data: [12, 18, 10, 22, 16],
-                    color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-                    strokeWidth: 3,
-                  },
-                ],
-              }}
-              width={screenWidth - 64}
-              height={200}
-              chartConfig={{
-                backgroundColor: "#f8f9fa",
-                backgroundGradientFrom: "#f8f9fa",
-                backgroundGradientTo: "#f8f9fa",
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(59, 130, 246, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-                style: {
-                  borderRadius: 16,
-                },
-                propsForDots: {
-                  r: "5",
-                  strokeWidth: "2",
-                  stroke: "#3b82f6",
-                  fill: "#ffffff",
-                },
-                propsForBackgroundLines: {
-                  strokeWidth: 1,
-                  stroke: "#e5e7eb",
-                  strokeDasharray: "0",
-                },
-              }}
-              bezier
-              style={{
-                borderRadius: 16,
-              }}
-              withInnerLines={true}
-              withOuterLines={false}
-              withVerticalLabels={true}
-              withHorizontalLabels={true}
-              withShadow={false}
-            />
+            <Text style={{ textAlign: "center", color: "#6b7280" }}>Loading tasks...</Text>
           </View>
-        </View>
-
-      <View style={{ paddingHorizontal: 16, marginBottom: 100 }}>
-        <Text style={{ fontSize: 20, fontWeight: "600", marginTop: 16, marginBottom: 16 }}>
-          My Tasks
-        </Text>
-
-        {todos.length === 0 ? (
-          <Text style={{ textAlign: "center", color: "#888", marginTop: 20 }}>
-            No tasks assigned yet. Your coach will assign tasks for you.
-          </Text>
+        ) : todos.length === 0 ? (
+          <View
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: 14,
+              padding: 24,
+              borderWidth: 1,
+              borderColor: "#e5e7eb",
+            }}
+          >
+            <Text style={{ textAlign: "center", color: "#6b7280", fontSize: 15 }}>
+              No tasks assigned yet. Your coach will assign tasks for you.
+            </Text>
+          </View>
         ) : (
           todos.map((item) => (
             <View
               key={item.id}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 12,
+                backgroundColor: "#ffffff",
+                borderRadius: 14,
+                padding: 14,
+                marginBottom: 10,
                 borderWidth: 1,
-                borderColor: "#ddd",
-                borderRadius: 8,
-                marginBottom: 8,
+                borderColor: "#e5e7eb",
               }}
             >
-              <Pressable
-                onPress={() => toggleTodo(item.id)}
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderWidth: 2,
-                  borderColor: "#000",
-                  borderRadius: 4,
-                  marginRight: 12,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: item.completed ? "#000" : "#fff",
-                }}
-              >
-                {item.completed && (
-                  <Text style={{ color: "#fff", fontWeight: "bold" }}>✓</Text>
-                )}
-              </Pressable>
-              <Text
-                style={{
-                  flex: 1,
-                  fontSize: 16,
-                  textDecorationLine: item.completed ? "line-through" : "none",
-                  color: item.completed ? "#888" : "#000",
-                }}
-              >
-                {item.text}
-              </Text>
-              <Pressable
-                onPress={() => refuseTask(item.id)}
-                style={{
-                  backgroundColor: "#fee",
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 6,
-                  borderWidth: 1,
-                  borderColor: "#fcc",
-                }}
-              >
-                <Text style={{ color: "#c00", fontSize: 14, fontWeight: "600" }}>
-                  Refuse
-                </Text>
-              </Pressable>
+              <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+                <Pressable
+                  onPress={() => toggleTodo(item.id)}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderWidth: 2,
+                    borderColor: item.completed ? "#15803d" : "#4b5563",
+                    borderRadius: 7,
+                    marginRight: 12,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: item.completed ? "#15803d" : "#ffffff",
+                  }}
+                >
+                  {item.completed && (
+                    <Text style={{ color: "#ffffff", fontWeight: "700", fontSize: 12 }}>✓</Text>
+                  )}
+                </Pressable>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      lineHeight: 22,
+                      color: item.completed ? "#6b7280" : "#111827",
+                      textDecorationLine: item.completed ? "line-through" : "none",
+                    }}
+                  >
+                    {item.text}
+                  </Text>
+                  <Text
+                    style={{
+                      marginTop: 6,
+                      color: item.completed ? "#15803d" : "#4338ca",
+                      fontWeight: "600",
+                      fontSize: 12,
+                    }}
+                  >
+                    {item.completed ? "Completed" : "In progress"}
+                  </Text>
+                </View>
+              </View>
+
+              {!item.completed && (
+                <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 12 }}>
+                  <Pressable
+                    onPress={() => refuseTask(item.id)}
+                    style={{
+                      backgroundColor: "#fef2f2",
+                      paddingHorizontal: 12,
+                      paddingVertical: 7,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: "#fecaca",
+                    }}
+                  >
+                    <Text style={{ color: "#b91c1c", fontSize: 13, fontWeight: "600" }}>
+                      Refuse
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
           ))
         )}
-      </View>
       </ScrollView>
-
     </View>
   );
 }

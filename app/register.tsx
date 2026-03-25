@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { styles } from "./loginStyle";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function Register() {
   const [fname, setFname] = useState("");

@@ -90,6 +90,30 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="account/invites"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="analytics-metric"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="coach-settings"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="manual-input"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

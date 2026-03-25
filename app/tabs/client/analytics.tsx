@@ -1,39 +1,52 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    ActivityIndicator,
+    Dimensions,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import {
-  loadHealthSnapshot,
-  openHealthConnectSettings,
-  requestHealthPermissionsAndLoad,
-  type HealthLoadState,
-  type HealthSnapshot,
+    loadHealthSnapshot,
+    openHealthConnectSettings,
+    requestHealthPermissionsAndLoad,
+    type HealthLoadState,
+    type HealthSnapshot,
 } from "../../utils/healthData";
-// Manual input state for health and workout data
-const initialManualData = {
-  weight: '',
-  sleep: '',
-  steps: '',
-  calories: '',
-  workoutType: '',
-  workoutDuration: '',
-};
-  // Manual input state
-
-  const router = useRouter();
 
 const screenWidth = Dimensions.get("window").width;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 type RangeKey = "7D" | "30D" | "90D";
+type MetricKey =
+  | "steps"
+  | "calories"
+  | "sleep"
+  | "heartRate"
+  | "bodyWeight"
+  | "bloodOxygen"
+  | "bloodPressure"
+  | "hrv"
+  | "activeMinutes";
+
+type BackendSummary = {
+  stepsTotal: number | null;
+  caloriesTotal: number | null;
+  sleepAverageHours: number | null;
+  heartRateAverageBpm: number | null;
+  activeMinutesTotal: number | null;
+  weightLatestKg: number | null;
+  oxygenLatestPercent: number | null;
+  bloodPressureLatest: { systolic: number; diastolic: number } | null;
+  hrvLatestMs: number | null;
+};
 
 const rangeOptions: RangeKey[] = ["7D", "30D", "90D"];
 
@@ -77,27 +90,145 @@ function toGoalPercent(value: number | null, goal: number): number {
   return Math.max(0, Math.min(percent, 100));
 }
 
+function buildSparseLabels(labels: string[], maxVisible: number): string[] {
+  if (labels.length <= maxVisible) {
+    return labels;
+  }
+
+  const sparse = labels.map(() => "");
+  const lastIndex = labels.length - 1;
+  const step = Math.max(1, Math.floor(lastIndex / (maxVisible - 1)));
+
+  for (let i = 0; i < labels.length; i += step) {
+    sparse[i] = labels[i] ?? "";
+  }
+
+  sparse[0] = labels[0] ?? "";
+  sparse[lastIndex] = labels[lastIndex] ?? "";
+  return sparse;
+}
+
+function buildRangeBounds(days: number): { start: string; end: string } {
+  const now = new Date();
+  const startDate = new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+
+  const start = new Date(
+    Date.UTC(
+      startDate.getUTCFullYear(),
+      startDate.getUTCMonth(),
+      startDate.getUTCDate(),
+      0,
+      0,
+      0,
+      0,
+    ),
+  ).toISOString();
+
+  const end = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      23,
+      59,
+      59,
+      999,
+    ),
+  ).toISOString();
+
+  return { start, end };
+}
+
+function formatLabels(times: string[]): string[] {
+  return times.map((iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  });
+}
+
+function aggregateDailySeries(
+  times: string[],
+  values: unknown[],
+  strategy: "sum" | "avg" | "last" | "max"
+): { times: string[]; values: number[] } {
+  const buckets = new Map<string, { sum: number; count: number; last: number; max: number }>();
+
+  for (let i = 0; i < times.length; i += 1) {
+    const iso = times[i];
+    const numeric = Number(values[i]);
+    if (!iso || Number.isNaN(numeric)) {
+      continue;
+    }
+
+    const date = new Date(iso);
+    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+
+    const existing = buckets.get(key);
+    if (existing) {
+      existing.sum += numeric;
+      existing.count += 1;
+      existing.last = numeric;
+      existing.max = Math.max(existing.max, numeric);
+    } else {
+      buckets.set(key, { sum: numeric, count: 1, last: numeric, max: numeric });
+    }
+  }
+
+  const keys = Array.from(buckets.keys()).sort();
+  const aggregatedTimes = keys.map((key) => `${key}T00:00:00.000Z`);
+  const aggregatedValues = keys.map((key) => {
+    const bucket = buckets.get(key)!;
+    if (strategy === "avg") {
+      return bucket.sum / Math.max(bucket.count, 1);
+    }
+    if (strategy === "last") {
+      return bucket.last;
+    }
+    if (strategy === "max") {
+      return bucket.max;
+    }
+    return bucket.sum;
+  });
+
+  return {
+    times: aggregatedTimes,
+    values: aggregatedValues,
+  };
+}
+
+function sumValues(values: number[]): number | null {
+  if (values.length === 0) {
+    return null;
+  }
+
+  return values.reduce((sum, value) => sum + value, 0);
+}
+
+function averageValues(values: number[]): number | null {
+  if (values.length === 0) {
+    return null;
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function lastValue(values: number[]): number | null {
+  if (values.length === 0) {
+    return null;
+  }
+
+  return values[values.length - 1] ?? null;
+}
+
 function compactTrend(snapshot: HealthSnapshot | null): { labels: string[]; values: number[] } {
   if (!snapshot || snapshot.trend.values.length === 0) {
     return { labels: ["No data"], values: [0] };
   }
 
-  if (snapshot.trend.values.length <= 10) {
-    return snapshot.trend;
-  }
-
-  const stride = Math.ceil(snapshot.trend.values.length / 10);
-  const labels: string[] = [];
-  const values: number[] = [];
-
-  snapshot.trend.values.forEach((value, index) => {
-    const isStridePoint = index % stride === 0;
-    const isLastPoint = index === snapshot.trend.values.length - 1;
-    if (isStridePoint || isLastPoint) {
-      labels.push(snapshot.trend.labels[index] ?? "-");
-      values.push(value);
-    }
-  });
+  const rawLabels = snapshot.trend.labels;
+  const maxVisible = rawLabels.length > 60 ? 5 : rawLabels.length > 20 ? 6 : 8;
+  const labels = buildSparseLabels(rawLabels, maxVisible);
+  const values = snapshot.trend.values;
 
   return {
     labels,
@@ -111,69 +242,76 @@ function shortSourceName(source: string): string {
 }
 
 export default function AnalyticsScreen() {
+  const router = useRouter();
   const [selectedRange, setSelectedRange] = useState<RangeKey>("7D");
   const [snapshot, setSnapshot] = useState<HealthSnapshot | null>(null);
   const [loadState, setLoadState] = useState<HealthLoadState>("permissions-required");
   const [statusMessage, setStatusMessage] = useState("Syncing health data...");
   const [isLoading, setIsLoading] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [backendStepsSeries, setBackendStepsSeries] = useState<{ labels: string[]; values: number[] } | null>(null);
+  const [backendSummary, setBackendSummary] = useState<BackendSummary | null>(null);
 
   const selectedDays = rangeToDays[selectedRange];
-  const chartSeries = useMemo(() => compactTrend(snapshot), [snapshot]);
+  const chartSeries = useMemo(() => backendStepsSeries ?? compactTrend(snapshot), [backendStepsSeries, snapshot]);
   const chartWidth = Math.max(screenWidth - 56, 280);
 
   const metricCards = useMemo(
     () => [
       {
+        key: "steps" as MetricKey,
         emoji: "STP",
         title: "Steps",
-        value: formatInteger(snapshot?.steps ?? null),
+        value: formatInteger(backendSummary?.stepsTotal ?? snapshot?.steps ?? null),
         change: `${selectedDays}-day total`,
         accent: "#dbeafe",
         titleColor: "#1e3a8a",
       },
       {
+        key: "calories" as MetricKey,
         emoji: "CAL",
         title: "Calories Burned",
         value:
-          snapshot?.totalCaloriesKcal === null
+          (backendSummary?.caloriesTotal ?? snapshot?.totalCaloriesKcal ?? null) === null
             ? "--"
-            : `${formatInteger(snapshot?.totalCaloriesKcal ?? null)} kcal`,
+            : `${formatInteger(backendSummary?.caloriesTotal ?? snapshot?.totalCaloriesKcal ?? null)} kcal`,
         change: "From daily activity",
         accent: "#fff7ed",
         titleColor: "#9a3412",
       },
       {
+        key: "sleep" as MetricKey,
         emoji: "SLP",
         title: "Sleep Avg",
         value:
-          snapshot?.sleepAverageHours === null
+          (backendSummary?.sleepAverageHours ?? snapshot?.sleepAverageHours ?? null) === null
             ? "--"
-            : `${formatDecimal(snapshot?.sleepAverageHours ?? null)} h`,
+            : `${formatDecimal(backendSummary?.sleepAverageHours ?? snapshot?.sleepAverageHours ?? null)} h`,
         change: `${selectedDays}-day average`,
         accent: "#ede9fe",
         titleColor: "#5b21b6",
       },
       {
+        key: "heartRate" as MetricKey,
         emoji: "HR",
         title: "Avg Heart Rate",
         value:
-          snapshot?.averageHeartRateBpm === null
+          (backendSummary?.heartRateAverageBpm ?? snapshot?.averageHeartRateBpm ?? null) === null
             ? "--"
-            : `${formatInteger(snapshot?.averageHeartRateBpm ?? null)} bpm`,
+            : `${formatInteger(backendSummary?.heartRateAverageBpm ?? snapshot?.averageHeartRateBpm ?? null)} bpm`,
         change: "From connected sensors",
         accent: "#dcfce7",
         titleColor: "#166534",
       },
     ],
-    [selectedDays, snapshot]
+    [backendSummary, selectedDays, snapshot]
   );
 
   const recoveryBreakdown = useMemo(
     () => [
       {
         label: "Sleep target",
-        value: toGoalPercent(snapshot?.sleepAverageHours ?? null, 8),
+        value: toGoalPercent(backendSummary?.sleepAverageHours ?? snapshot?.sleepAverageHours ?? null, 8),
         color: "#2563eb",
       },
       {
@@ -183,60 +321,180 @@ export default function AnalyticsScreen() {
       },
       {
         label: "Activity target",
-        value: toGoalPercent(snapshot?.activeMinutes ?? null, 45),
+        value: toGoalPercent(backendSummary?.activeMinutesTotal ?? snapshot?.activeMinutes ?? null, 45),
         color: "#16a34a",
       },
     ],
-    [snapshot]
+    [backendSummary, snapshot]
   );
 
   const latestVitals = useMemo(
     () => [
       {
+        key: "bodyWeight" as MetricKey,
         label: "Body weight",
         value:
-          snapshot?.weightKg === null
+          (backendSummary?.weightLatestKg ?? snapshot?.weightKg ?? null) === null
             ? "No data"
-            : `${formatDecimal(snapshot?.weightKg ?? null)} kg`,
+            : `${formatDecimal(backendSummary?.weightLatestKg ?? snapshot?.weightKg ?? null)} kg`,
         note: "Latest entry",
       },
       {
+        key: "bloodOxygen" as MetricKey,
         label: "Blood oxygen",
         value:
-          snapshot?.oxygenSaturationPercent === null
+          (backendSummary?.oxygenLatestPercent ?? snapshot?.oxygenSaturationPercent ?? null) === null
             ? "No data"
-            : `${formatInteger(snapshot?.oxygenSaturationPercent ?? null)}%`,
+            : `${formatInteger(backendSummary?.oxygenLatestPercent ?? snapshot?.oxygenSaturationPercent ?? null)}%`,
         note: "Latest entry",
       },
       {
+        key: "bloodPressure" as MetricKey,
         label: "Blood pressure",
-        value: snapshot?.bloodPressure
-          ? `${snapshot.bloodPressure.systolic}/${snapshot.bloodPressure.diastolic}`
-          : "No data",
+        value: (() => {
+          const bloodPressure = backendSummary?.bloodPressureLatest ?? snapshot?.bloodPressure ?? null;
+          return bloodPressure
+            ? `${bloodPressure.systolic}/${bloodPressure.diastolic}`
+            : "No data";
+        })(),
         note: "mmHg",
       },
       {
+        key: "hrv" as MetricKey,
         label: "HRV",
         value:
-          snapshot?.hrvMs === null
+          (backendSummary?.hrvLatestMs ?? snapshot?.hrvMs ?? null) === null
             ? "No data"
-            : `${formatInteger(snapshot?.hrvMs ?? null)} ms`,
+            : `${formatInteger(backendSummary?.hrvLatestMs ?? snapshot?.hrvMs ?? null)} ms`,
         note: "RMSSD",
       },
       {
+        key: "activeMinutes" as MetricKey,
         label: "Active minutes",
         value:
-          snapshot?.activeMinutes === null
+          (backendSummary?.activeMinutesTotal ?? snapshot?.activeMinutes ?? null) === null
             ? "No data"
-            : `${formatInteger(snapshot?.activeMinutes ?? null)} min`,
+            : `${formatInteger(backendSummary?.activeMinutesTotal ?? snapshot?.activeMinutes ?? null)} min`,
         note: "Exercise sessions",
       },
     ],
-    [snapshot]
+    [backendSummary, snapshot]
   );
 
-  const syncData = useCallback(
-    async (promptPermissions: boolean) => {
+  const fetchCurrentUserId = useCallback(async (token: string): Promise<number | null> => {
+    const accountResponse = await fetch(`${API_URL}/api/account`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!accountResponse.ok) {
+      return null;
+    }
+
+    const account = await accountResponse.json();
+    return typeof account?.id === "number" ? account.id : null;
+  }, []);
+
+  const fetchBackendVector = useCallback(
+    async (
+      token: string,
+      userId: number,
+      biometricType: string,
+      strategy: "sum" | "avg" | "last" | "max"
+    ): Promise<{ times: string[]; values: number[] } | null> => {
+      const { start, end } = buildRangeBounds(selectedDays);
+      const query = new URLSearchParams({
+        user_id: String(userId),
+        biometric_type: biometricType,
+        start,
+        end,
+      });
+
+      const response = await fetch(`${API_URL}/api/biometrics/vector?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      if (!Array.isArray(data?.t) || !Array.isArray(data?.y) || data.t.length === 0) {
+        return null;
+      }
+
+      const aggregated = aggregateDailySeries(data.t, data.y, strategy);
+      if (aggregated.times.length === 0) {
+        return null;
+      }
+
+      return {
+        times: aggregated.times.slice(-selectedDays),
+        values: aggregated.values.slice(-selectedDays),
+      };
+    },
+    [selectedDays]
+  );
+
+  const reloadBackendData = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) {
+        setBackendStepsSeries(null);
+        setBackendSummary(null);
+        return;
+      }
+
+      const userId = await fetchCurrentUserId(token);
+      if (!userId) {
+        setBackendStepsSeries(null);
+        setBackendSummary(null);
+        return;
+      }
+
+      const [
+        steps,
+        calories,
+        sleep,
+        heartRate,
+        weight,
+      ] = await Promise.all([
+        fetchBackendVector(token, userId, "steps_per_day", "max"),
+        fetchBackendVector(token, userId, "calories_per_day", "sum"),
+        fetchBackendVector(token, userId, "sleep_hours_per_day", "avg"),
+        fetchBackendVector(token, userId, "heart_rate_avg_per_day", "avg"),
+        fetchBackendVector(token, userId, "weight_kg", "last"),
+      ]);
+
+      if (steps && steps.times.length > 0) {
+        const rawLabels = formatLabels(steps.times);
+        const maxVisible = rawLabels.length > 60 ? 5 : rawLabels.length > 20 ? 6 : 8;
+        setBackendStepsSeries({
+          labels: buildSparseLabels(rawLabels, maxVisible),
+          values: steps.values,
+        });
+      } else {
+        setBackendStepsSeries(null);
+      }
+
+      setBackendSummary({
+        stepsTotal: sumValues(steps?.values ?? []),
+        caloriesTotal: sumValues(calories?.values ?? []),
+        sleepAverageHours: averageValues(sleep?.values ?? []),
+        heartRateAverageBpm: averageValues(heartRate?.values ?? []),
+        activeMinutesTotal: null,
+        weightLatestKg: lastValue(weight?.values ?? []),
+        oxygenLatestPercent: null,
+        bloodPressureLatest: null,
+        hrvLatestMs: null,
+      });
+    } catch {
+      setBackendStepsSeries(null);
+      setBackendSummary(null);
+    }
+  }, [fetchBackendVector, fetchCurrentUserId]);
+
+  const loadDeviceData = useCallback(
+    async (promptPermissions: boolean, shouldSyncToBackend: boolean) => {
       if (promptPermissions) {
         setIsConnecting(true);
       } else {
@@ -244,27 +502,34 @@ export default function AnalyticsScreen() {
       }
 
       const result = promptPermissions
-        ? await requestHealthPermissionsAndLoad(selectedDays)
-        : await loadHealthSnapshot(selectedDays);
+        ? await requestHealthPermissionsAndLoad(selectedDays, shouldSyncToBackend)
+        : await loadHealthSnapshot(selectedDays, shouldSyncToBackend);
 
       setLoadState(result.state);
       setStatusMessage(result.message);
       setSnapshot(result.snapshot ?? null);
+
+      if (shouldSyncToBackend && result.state === "ready") {
+        await reloadBackendData();
+      }
+
       setIsLoading(false);
       setIsConnecting(false);
     },
-    [selectedDays]
+    [reloadBackendData, selectedDays]
   );
 
   useEffect(() => {
-    void syncData(false);
-  }, [syncData]);
+    void loadDeviceData(false, false);
+    void reloadBackendData();
+  }, [loadDeviceData, reloadBackendData]);
 
   const stateColor = statePalette[loadState];
   const canConnect =
     loadState === "permissions-required" ||
     loadState === "unsupported" ||
     loadState === "error";
+  const canSync = loadState === "ready";
 
   const canOpenProvider =
     loadState === "provider-missing" || loadState === "provider-update-required";
@@ -284,18 +549,30 @@ export default function AnalyticsScreen() {
         </View>
 
         <View style={styles.actionsRow}>
-          <Pressable style={styles.actionButton} onPress={() => void syncData(false)}>
-            <Text style={styles.actionButtonText}>Refresh</Text>
+          <Pressable style={styles.actionButton} onPress={() => void reloadBackendData()}>
+            <Text style={styles.actionButtonText}>Reload Backend</Text>
           </Pressable>
 
           {canConnect && (
             <Pressable
               style={[styles.actionButton, styles.actionButtonPrimary]}
-              onPress={() => void syncData(true)}
+              onPress={() => void loadDeviceData(true, false)}
               disabled={isConnecting}
             >
               <Text style={[styles.actionButtonText, styles.actionButtonPrimaryText]}>
                 {isConnecting ? "Connecting..." : "Connect Health Data"}
+              </Text>
+            </Pressable>
+          )}
+
+          {canSync && (
+            <Pressable
+              style={[styles.actionButton, styles.actionButtonPrimary]}
+              onPress={() => void loadDeviceData(false, true)}
+              disabled={isLoading}
+            >
+              <Text style={[styles.actionButtonText, styles.actionButtonPrimaryText]}>
+                {isLoading ? "Syncing..." : "Sync"}
               </Text>
             </Pressable>
           )}
@@ -343,18 +620,35 @@ export default function AnalyticsScreen() {
 
         <View style={styles.metricsGrid}>
           {metricCards.map((metric) => (
-            <View key={metric.title} style={[styles.metricCard, { backgroundColor: metric.accent }]}>
+            <Pressable
+              key={metric.title}
+              onPress={() =>
+                router.push({
+                  pathname: "/tabs/client/analytics-metric",
+                  params: {
+                    metric: metric.key,
+                    range: selectedRange,
+                  },
+                })
+              }
+              style={[styles.metricCard, { backgroundColor: metric.accent }]}
+            >
               <Text style={styles.metricEmoji}>{metric.emoji}</Text>
               <Text style={[styles.metricTitle, { color: metric.titleColor }]}>{metric.title}</Text>
               <Text style={styles.metricValue}>{metric.value}</Text>
               <Text style={styles.metricChange}>{metric.change}</Text>
-            </View>
+              <Text style={styles.metricOpenHint}>Tap to open chart</Text>
+            </Pressable>
           ))}
         </View>
 
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>Steps Trend</Text>
-          <Text style={styles.panelSubtitle}>Aggregated from phone and connected wearables</Text>
+          <Text style={styles.panelSubtitle}>
+            {backendStepsSeries
+              ? "Loaded from backend vector database"
+              : "Aggregated from phone and connected wearables"}
+          </Text>
           <LineChart
             data={{
               labels: chartSeries.labels,
@@ -420,13 +714,28 @@ export default function AnalyticsScreen() {
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>Latest Health Readings</Text>
           {latestVitals.map((vital) => (
-            <View key={vital.label} style={styles.vitalRow}>
+            <Pressable
+              key={vital.label}
+              style={styles.vitalRow}
+              onPress={() =>
+                router.push({
+                  pathname: "/tabs/client/analytics-metric",
+                  params: {
+                    metric: vital.key,
+                    range: selectedRange,
+                  },
+                })
+              }
+            >
               <View>
                 <Text style={styles.vitalLabel}>{vital.label}</Text>
                 <Text style={styles.vitalNote}>{vital.note}</Text>
               </View>
-              <Text style={styles.vitalValue}>{vital.value}</Text>
-            </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={styles.vitalValue}>{vital.value}</Text>
+                <Text style={styles.vitalOpenHint}>Tap to view trend</Text>
+              </View>
+            </Pressable>
           ))}
         </View>
 
@@ -451,7 +760,7 @@ export default function AnalyticsScreen() {
           <Text style={styles.panelTitle}>Manual Health & Workout Entry</Text>
           <Pressable
             style={[styles.actionButton, styles.actionButtonPrimary, { alignSelf: 'flex-start', marginTop: 8 }]}
-            onPress={() => router.push('../tabs/client/manual-input')}
+            onPress={() => router.push('./manual-input')}
           >
             <Text style={[styles.actionButtonText, styles.actionButtonPrimaryText]}>Input Data Manually</Text>
           </Pressable>
@@ -600,6 +909,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#4b5563",
   },
+  metricOpenHint: {
+    marginTop: 10,
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1d4ed8",
+  },
   panel: {
     backgroundColor: "#ffffff",
     borderRadius: 20,
@@ -678,6 +993,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111827",
   },
+  vitalOpenHint: {
+    marginTop: 4,
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#1d4ed8",
+  },
   sourceWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -699,5 +1020,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: "#6b7280",
     fontSize: 13,
+  },
+  diagRow: {
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+  },
+  diagLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  diagStatus: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  diagDetail: {
+    marginTop: 2,
+    fontSize: 12,
+    color: "#4b5563",
   },
 });

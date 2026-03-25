@@ -5,17 +5,17 @@ import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import {
-  Alert,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
+    Alert,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 
 import { styles } from "./loginStyle";
@@ -23,7 +23,7 @@ import { styles } from "./loginStyle";
 import Constants from "expo-constants";
 WebBrowser.maybeCompleteAuthSession();
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function Login() {
   const [username, setUsername] = useState(""); // email OR phone
@@ -40,17 +40,34 @@ export default function Login() {
     if (result.type === "success" && result.url) {
       const data = Linking.parse(result.url);
       const token = data.queryParams?.token;
-      const isCoach = data.queryParams?.is_coach === "true";
-
-      console.log("[LOGIN] is_coach (Google):", isCoach);
 
       if (token) {
-        await AsyncStorage.setItem("access_token", token as string);
+        const accessToken = token as string;
+        await AsyncStorage.setItem("access_token", accessToken);
 
-        if (isCoach) {
-          router.replace("/tabs/coach/coach-home");
-        } else {
-          router.replace("/tabs/client/client-home");
+        try {
+          const accountRes = await fetch(`${API_URL}/api/account`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+          if (!accountRes.ok) {
+            Alert.alert("Login failed", "Unable to fetch account details.");
+            return;
+          }
+
+          const account = await accountRes.json();
+          console.log("[GOOGLE LOGIN ACCOUNT]", account);
+
+          if (account.is_coach) {
+            router.replace("/tabs/coach/coach-home");
+          } else {
+            router.replace("/tabs/client/client-home");
+          }
+        } catch (err) {
+          console.error(err);
+          Alert.alert("Login failed", "Unable to fetch account details.");
         }
       }
     }
