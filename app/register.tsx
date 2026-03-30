@@ -1,11 +1,22 @@
-import { SafeAreaView, View, Text, TextInput, Pressable, Image, Alert } from "react-native";
-import { useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from "expo-constants";
 import { router } from "expo-router";
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker"; // add this import
-import { styles } from "./loginStyle"; // reuse the same style file
+import { useState } from "react";
+import {
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
+} from "react-native";
+import { styles } from "./loginStyle";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function Register() {
   const [fname, setFname] = useState("");
@@ -13,16 +24,13 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [accountType, setAccountType] = useState<"coach" | "client">("client"); // default
   const [loading, setLoading] = useState(false);
 
-  // auto-generate username from first+last name
-  const generateUsername = (first: string, last: string) => {
-    const random = Math.floor(100 + Math.random() * 900);
-    return `${first}${last}${random}`.toLowerCase().replace(/\s/g, "");
-  };
-
   const handleRegister = async () => {
+    // Hide keyboard when pressing register
+    Keyboard.dismiss();
+
+    // Validate all fields
     if (!fname || !lname || !email || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields");
       return;
@@ -33,32 +41,50 @@ export default function Register() {
     }
 
     setLoading(true);
-    const username = generateUsername(fname, lname);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const randomDigit = Math.floor(Math.random() * 2147483647);
+    const username = normalizedEmail;
 
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
+          email: normalizedEmail,
+          phone: randomDigit,
           firstName: fname,
           lastName: lname,
           username,
           password,
+          isCoach: false
         }),
       });
 
-      const text = await response.text();
-      console.log("Register response:", text);
+      const data = await response.json();
+      console.log("Register response:", data);
+
+      // Log JWT access token
+      if (data.access_token) {
+        console.log("JWT access token received:", data.access_token);
+      }
+
+      // Try to log refresh token from Set-Cookie header (if available)
+      const setCookie = response.headers.get('set-cookie');
+      if (setCookie) {
+        console.log("Refresh token Set-Cookie header:", setCookie);
+      } else {
+        console.log("No Set-Cookie header for refresh token found. (This is expected in React Native, as fetch does not expose HTTP-only cookies)");
+      }
 
       if (response.ok) {
-        Alert.alert(
-          "Success",
-          `Account created! Your username is: ${username}`
-        );
-        router.replace("/"); // go to main login page
+        // STORE token securely
+        await AsyncStorage.setItem('accessToken', data.access_token);
+
+        // go to ChooseCoach
+        router.replace("/choose-coach");
       } else {
-        Alert.alert("Error", text);
+        Alert.alert("Error", data.detail || JSON.stringify(data));
       }
     } catch (err) {
       console.error("Network error:", err);
@@ -69,128 +95,113 @@ export default function Register() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.shadowWrapper}>
-        <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <SafeAreaView style={styles.safe}>
+          <View style={styles.shadowWrapper}>
+            <View style={styles.container}>
+              <View style={styles.contentBox}>
+                <Text style={styles.title}>Account Registration</Text>
 
-          <View style={styles.contentBox}>
-            <Text style={styles.title}>Account Registration</Text>
+                {/* First Name */}
+                <View style={styles.inputBox}>
+                  <Text style={styles.label}>First Name</Text>
+                  <TextInput
+                    placeholder="Enter first name"
+                    placeholderTextColor="#999"
+                    style={styles.input}
+                    value={fname}
+                    onChangeText={setFname}
+                    returnKeyType="next"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                  />
+                </View>
 
-            <View style={styles.inputBox}>
-              <Text style={styles.label}>First Name</Text>
-              <TextInput
-                placeholder="Enter first name"
-                placeholderTextColor="#999"
-                style={styles.input}
-                value={fname}
-                onChangeText={setFname}
-              />
-            </View>
+                {/* Last Name */}
+                <View style={styles.inputBox}>
+                  <Text style={styles.label}>Last Name</Text>
+                  <TextInput
+                    placeholder="Enter last name"
+                    placeholderTextColor="#999"
+                    style={styles.input}
+                    value={lname}
+                    onChangeText={setLname}
+                    returnKeyType="next"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                  />
+                </View>
 
-            <View style={styles.inputBox}>
-              <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                placeholder="Enter last name"
-                placeholderTextColor="#999"
-                style={styles.input}
-                value={lname}
-                onChangeText={setLname}
-              />
-            </View>
+                {/* Email */}
+                <View style={styles.inputBox}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    placeholder="Enter email"
+                    placeholderTextColor="#999"
+                    style={styles.input}
+                    value={email}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    onChangeText={setEmail}
+                    returnKeyType="next"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                  />
+                </View>
 
-            <View style={styles.inputBox}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                placeholder="Enter email"
-                placeholderTextColor="#999"
-                style={styles.input}
-                value={email}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                onChangeText={setEmail}
-              />
-            </View>
+                {/* Password */}
+                <View style={styles.inputBox}>
+                  <Text style={styles.label}>Password</Text>
+                  <TextInput
+                    placeholder="Enter password"
+                    placeholderTextColor="#999"
+                    style={styles.input}
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                    returnKeyType="next"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                  />
+                </View>
 
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ marginBottom: 8, fontWeight: "300", color: "#333" }}>
-              Account Type
-            </Text>
-            <View style={{ flexDirection: "row" }}>
-              <Pressable
-                onPress={() => setAccountType("client")}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: accountType === "client" ? "blue" : "#ddd",
-                  borderRadius: 12,
-                  marginRight: 8,
-                  backgroundColor: accountType === "client" ? "#e0f0ff" : "#fff",
-                  alignItems: "center",
-                }}
-              >
-                <Text>Client</Text>
-              </Pressable>
+                {/* Confirm Password */}
+                <View style={styles.inputBox}>
+                  <Text style={styles.label}>Confirm Password</Text>
+                  <TextInput
+                    placeholder="Confirm password"
+                    placeholderTextColor="#999"
+                    style={styles.input}
+                    secureTextEntry
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    returnKeyType="done"
+                    onSubmitEditing={handleRegister} // submit on Enter/Done
+                  />
+                </View>
 
-              <Pressable
-                onPress={() => setAccountType("coach")}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderWidth: 1,
-                  borderColor: accountType === "coach" ? "blue" : "#ddd",
-                  borderRadius: 12,
-                  backgroundColor: accountType === "coach" ? "#e0f0ff" : "#fff",
-                  alignItems: "center",
-                }}
-              >
-                <Text>Coach</Text>
-              </Pressable>
+                {/* Register Button */}
+                <Pressable
+                  onPress={handleRegister}
+                  style={[styles.button, loading && { opacity: 0.6 }]}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>
+                    {loading ? "Registering..." : "Register"}
+                  </Text>
+                </Pressable>
+
+                {/* Already have an account */}
+                <Pressable onPress={() => router.replace("/")}>
+                  <Text style={styles.register}>
+                    Already have an account? <Text style={styles.registerLink}>Login</Text>
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-
-            <View style={styles.inputBox}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                placeholder="Enter password"
-                placeholderTextColor="#999"
-                style={styles.input}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
-
-            <View style={styles.inputBox}>
-              <Text style={styles.label}>Confirm Password</Text>
-              <TextInput
-                placeholder="Confirm password"
-                placeholderTextColor="#999"
-                style={styles.input}
-                secureTextEntry
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-              />
-            </View>
-
-            <Pressable
-              onPress={handleRegister}
-              style={[styles.button, loading && { opacity: 0.6 }]}
-              disabled={loading}
-            >
-              <Text style={styles.buttonText}>
-                {loading ? "Registering..." : "Register"}
-              </Text>
-            </Pressable>
-
-            <Pressable onPress={() => router.replace("/")}>
-              <Text style={styles.register}>
-                Already have an account? <Text style={styles.registerLink}>Login</Text>
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </SafeAreaView>
+        </SafeAreaView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
