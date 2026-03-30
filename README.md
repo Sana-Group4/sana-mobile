@@ -16,8 +16,6 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
-3. Make sure you have the sana backend running on the same network, it is available at the following repository [here](https://github.com/Sana-Group4/sana-backend) and this is configured in the .env file (see sample .env for correct variable naming) in the sana-mobile repo.
-
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
