@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, Text, TextInput, View, Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
 import { styles } from "./styles";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function EditProfile() {
   const [user, setUser] = useState<any>(null);

@@ -1,81 +1,46 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import { refreshAccessToken } from "../../utils/auth";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
+import {
+    actionButton,
+    actionContainer,
+    avatarStyle,
+    buttonText,
+    cardStyle,
+    containerStyle,
+    editButton,
+    infoCard,
+    infoRow,
+    loadingStyle,
+    logoutButton,
+    logoutText,
+    nameText,
+    profileCard,
+    sectionTitle,
+    titleText,
+} from "../coach/styles/settings-style";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function Settings() {
   const [user, setUser] = useState<any>(null);
-  const [accountError, setAccountError] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setAccountError(false);
         const token = await AsyncStorage.getItem("access_token");
-        let res = await fetch(`${API_URL}/api/account`, {
+        const res = await fetch(`${API_URL}/api/account`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        if (res.status === 401) {
-          const data = await res.json();
-          console.log("401 response from /api/account:", data);
-          // Fix: check for error_code inside detail object
-          const errorCode = data.error_code ?? data.detail?.error_code;
-          if (errorCode === 1) {
-            // Token expired, try to refresh
-            const refreshResult = await refreshAccessToken();
-            if (refreshResult.success) {
-              // Retry original request with new token
-              const newToken = refreshResult.access_token;
-              console.log("Access token updated:", newToken);
-              // Try again with new token
-              res = await fetch(`${API_URL}/api/account`, {
-                headers: {
-                  Authorization: `Bearer ${newToken}`,
-                },
-              });
-              if (res.ok) {
-                const retryData = await res.json();
-                setUser(retryData);
-                return;
-              } else {
-                setAccountError(true);
-                return;
-              }
-            } else {
-              Alert.alert("Session expired", "Please log in again.");
-              router.replace("/");
-              return;
-            }
-          } else {
-            setAccountError(true);
-            return;
-          }
-        }
-
-        if (res.ok) {
-          const data = await res.json();
-          console.log("Successfully retrieved account info:", data);
-          setUser(data);
-        } else {
-          setAccountError(true);
-        }
+        const data = await res.json();
+        setUser(data);
       } catch (err) {
         console.log(err);
-        setAccountError(true);
       }
     };
 
@@ -97,7 +62,6 @@ export default function Settings() {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
-              credentials: "include",
             });
 
             router.replace("/");
@@ -109,251 +73,68 @@ export default function Settings() {
     ]);
   };
 
-  if (accountError) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Text>couldnt retrieve account info</Text>
-      </View>
-    );
-  }
   if (!user) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={loadingStyle}>
         <Text>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView style={{ flex: 1, paddingTop: 50 }}>
+    <View style={containerStyle}>
+      <ScrollView style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
+        <View style={cardStyle}>
+          <Text style={titleText}>Profile</Text>
+        </View>
 
-        {/* HEADER */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 28, fontWeight: "700", color: "#1a1a1a" }}>
-            Settings
+        <View style={profileCard}>
+          <View style={avatarStyle}>
+            <Text style={{ fontSize: 54 }}>👤</Text>
+          </View>
+
+          <Text style={nameText}>
+            {user.firstName} {user.lastName}
           </Text>
-        </View>
-
-        {/* USER CARD */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
-          <View
-            style={{
-              backgroundColor: "#f8f9fa",
-              borderRadius: 20,
-              padding: 24,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#e5e7eb",
-            }}
-          >
-            <View
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                backgroundColor: "#dbeafe",
-                justifyContent: "center",
-                alignItems: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ fontSize: 48 }}>👤</Text>
-            </View>
-
-            <Text style={{ fontSize: 24, fontWeight: "600", marginBottom: 4 }}>
-              {user.firstName} {user.lastName}
-            </Text>
-
-            <Text style={{ fontSize: 16, color: "#6b7280", marginBottom: 16 }}>
-              {user.email}
-            </Text>
-
-            <Text style={{ fontSize: 13, color: "#9ca3af" }}>
-              Your ID: {user.id}
-            </Text>
-
-            {/* EDIT PROFILE */}
-            <Pressable
-              onPress={() =>
-                router.push("/tabs/client/account/edit-profile")
-              }
-              style={{
-                backgroundColor: "#5c6ebe",
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 12,
-              }}
-            >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>
-                Edit Profile
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {/* ACCOUNT INFO  */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 12 }}>
-            Account Information
-          </Text>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Phone</Text>
-            <Text>+44 7304 446372 📱</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Date of Birth</Text>
-            <Text>January 1, 1999 🎂</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Location</Text>
-            <Text>United Kingdom 📍</Text>
-          </View>
-        </View>
-
-        {/* STYLES */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 12 }}>
-            Preferences
-          </Text>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-          <Text>Notifications</Text>
-            <Text>🔔</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Privacy</Text>
-            <Text>🔒</Text>
-          </View>
-
-          <View style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingVertical: 16,
-            paddingHorizontal: 16,
-            backgroundColor: "#fff",
-            borderRadius: 12,
-            marginBottom: 8,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-          }}>
-            <Text>Language</Text>
-            <Text>🌐</Text>
-          </View>
-        </View>
-
-        {/* BUTTONS */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 12 }}>
 
           <Pressable
-            onPress={() =>
-              router.push("/tabs/client/account/change-password")
-            }
-            style={{
-              backgroundColor: "#5c6ebe",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              marginBottom: 12,
-            }}
+            onPress={() => router.push("/tabs/client/account/edit-profile")}
+            style={editButton}
           >
-           <Text style={{ fontSize: 16, color: "#fff", fontWeight: "600" }}>
-              Change Password
-            </Text>
+            <Text style={buttonText}>Edit Details</Text>
           </Pressable>
-
-          <Pressable
-            onPress={() =>
-              router.push("/tabs/client/account/add-device")
-            }
-            style={{
-              backgroundColor: "#5c6ebe",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: 16, color: "#fff", fontWeight: "600" }}>
-              Add Device
-            </Text>
-          </Pressable>
-
         </View>
 
-        {/* LOGOUT */}
-        <View style={{ paddingHorizontal: 16, marginBottom: 32 }}>
+        <View style={infoCard}>
+          <Text style={sectionTitle}>Account Information</Text>
+          <InfoRow
+            label="Phone"
+            value={user.phone ? `${user.phone} ` : "Not added yet "}
+          />
+          <InfoRow label="Email" value={`${user.email} `} />
+          <InfoRow label="Personal ID" value={`${user.id} `} />
+        </View>
+
+        <View style={actionContainer}>
           <Pressable
             onPress={handleLogout}
-            style={{
-              backgroundColor: "#fee",
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#fcc",
-            }}
+            style={logoutButton}
           >
-            <Text style={{ color: "#c00", fontSize: 16, fontWeight: "600" }}>
-              Log Out
-            </Text>
+            <Text style={logoutText}>Log Out</Text>
           </Pressable>
         </View>
 
+        <View style={{ height: 40 }} />
       </ScrollView>
+    </View>
+  );
+}
+
+function InfoRow({ label, value }: any) {
+  return (
+    <View style={infoRow}>
+      <Text>{label}</Text>
+      <Text style={{ color: "#555" }}>{value}</Text>
     </View>
   );
 }

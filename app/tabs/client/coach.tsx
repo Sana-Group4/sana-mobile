@@ -1,11 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { FlatList, Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
+import { Pressable, SafeAreaView, SectionList, Text, View } from "react-native";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function ClientCoachPage() {
+  const router = useRouter();
   const [invites, setInvites] = useState<any[]>([]);
   const [coaches, setCoaches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,23 +74,16 @@ export default function ClientCoachPage() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-          <Text style={{ fontSize: 22, fontWeight: "700", marginBottom: 16 }}>
-            My Coaches
-          </Text>
-          {loading ? (
-            <Text>Loading coaches...</Text>
-          ) : coaches.length === 0 ? (
-            <Text style={{ color: "#888", marginBottom: 32 }}>
-              (You have no coaches yet.)
-            </Text>
-          ) : (
-            <FlatList
-              data={coaches}
-              keyExtractor={(item) => item.id.toString()}
-              style={{ marginBottom: 32 }}
-              renderItem={({ item }) => (
+      <SectionList
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
+        sections={[
+          {
+            title: "My Coaches",
+            data: loading ? [{ loading: true }] : coaches.length === 0 ? [{ empty: true }] : coaches,
+            renderItem: ({ item }) => {
+              if (item.loading) return <Text>Loading coaches...</Text>;
+              if (item.empty) return <Text style={{ color: "#888", marginBottom: 32 }}>(You have no coaches yet.)</Text>;
+              return (
                 <View
                   style={{
                     backgroundColor: "#f9fafb",
@@ -108,23 +103,44 @@ export default function ClientCoachPage() {
                   <Text style={{ fontSize: 14, color: "#666" }}>
                     Phone: {item.phone}
                   </Text>
+                  <Pressable
+                    onPress={() =>
+                      router.push({
+                        pathname: "/tabs/client/coach-settings",
+                        params: {
+                          coachId: String(item.id),
+                          firstName: item.firstName ?? "",
+                          lastName: item.lastName ?? "",
+                          username: item.username ?? "",
+                          email: item.email ?? "",
+                          phone: item.phone ?? "",
+                        },
+                      })
+                    }
+                    style={{
+                      marginTop: 12,
+                      alignSelf: "flex-start",
+                      backgroundColor: "#5c6ebe",
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text style={{ color: "#fff", fontWeight: "600", fontSize: 13 }}>
+                      Coach Settings
+                    </Text>
+                  </Pressable>
                 </View>
-              )}
-            />
-          )}
-
-          <Text style={{ fontSize: 22, fontWeight: "700", marginBottom: 16 }}>
-            My Invites
-          </Text>
-          {loading ? (
-            <Text>Loading invites...</Text>
-          ) : invites.length === 0 ? (
-            <Text style={{ color: "#888" }}>No invites</Text>
-          ) : (
-            <FlatList
-              data={invites}
-              keyExtractor={(item, idx) => `${item.coach_id}-${item.client_id}-${idx}`}
-              renderItem={({ item }) => (
+              );
+            },
+          },
+          {
+            title: "My Invites",
+            data: loading ? [{ loading: true }] : invites.length === 0 ? [{ empty: true }] : invites,
+            renderItem: ({ item }) => {
+              if (item.loading) return <Text>Loading invites...</Text>;
+              if (item.empty) return <Text style={{ color: "#888" }}>No invites</Text>;
+              return (
                 <View
                   style={{
                     backgroundColor: "#f0f6ff",
@@ -175,11 +191,25 @@ export default function ClientCoachPage() {
                     </Pressable>
                   </View>
                 </View>
-              )}
-            />
-          )}
-        </View>
-      </ScrollView>
+              );
+            },
+          },
+        ]}
+        keyExtractor={(item, index) => {
+          if (item.id) return `coach-${item.id}`;
+          if (item.coach_id && item.client_id) return `invite-${item.coach_id}-${item.client_id}`;
+          return String(index);
+        }}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={{ fontSize: 22, fontWeight: "700", marginBottom: 16 }}>{title}</Text>
+        )}
+        renderItem={({ item, section, index, separators }) => {
+          if (section && typeof section.renderItem === 'function') {
+            return section.renderItem({ item, section, index, separators });
+          }
+          return null;
+        }}
+      />
     </SafeAreaView>
   );
 }

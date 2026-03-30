@@ -29,7 +29,7 @@ import {
 } from "../coach/styles/settings-style";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function Settings() {
   <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -138,17 +138,9 @@ export default function Settings() {
 
         {/* ACTION BUTTONS */}
         <View style={actionContainer}>
-
-          <Pressable
-            onPress={() => router.push("/tabs/coach/account/add-device")}
-            style={actionButton}
-          >
-            <Text style={buttonText}>View Devices</Text>
-          </Pressable>
-
           <Pressable
             onPress={handleLogout}
-            style={[logoutButton, { marginTop: 12 }]}
+            style={logoutButton}
           >
             <Text style={logoutText}>Log Out</Text>
           </Pressable>

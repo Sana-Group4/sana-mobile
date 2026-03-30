@@ -1,15 +1,16 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  Pressable,
-  Alert,
-  SafeAreaView,
+    Alert,
+    FlatList,
+    Pressable,
+    SafeAreaView,
+    Text,
+    View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://192.168.0.62:8000";
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function ClientInvites() {
   const [invites, setInvites] = useState<any[]>([]);

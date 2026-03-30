@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, SafeAreaView, Text, View } from "react-native";
 import { styles } from "./loginStyle";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function ChooseCoach() {
   const [accessToken, setAccessToken] = useState<string | null>(null);

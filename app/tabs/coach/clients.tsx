@@ -1,21 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+    Alert,
+    FlatList,
+    Modal,
+    Pressable,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
-import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,16 +64,10 @@ const statusLabel: Record<BookingStatus, string> = {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ClientsScreen() {
-  <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={{ padding: 16 }}>
-          {/* Your inputs go here */}
-        </View>
-      </ScrollView>
-    </TouchableWithoutFeedback>
   const [clients, setClients] = useState<any[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [clientId, setClientId] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
@@ -124,16 +118,25 @@ export default function ClientsScreen() {
     }
   };
 
-  const loadAll = async () => {
-    setLoading(true);
+  const loadAll = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+
     const clientList = await loadClients();
     await loadBookings(clientList);
     setLoading(false);
-  };
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadAll(false);
+    setRefreshing(false);
+  }, [loadAll]);
 
   useEffect(() => {
-    loadAll();
-  }, []);
+    void loadAll();
+  }, [loadAll]);
 
   // ── Add client ──────────────────────────────────────────────────────────────
   const addClient = async () => {
@@ -247,11 +250,38 @@ export default function ClientsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 180 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 180 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />
+        }
+      >
         {/* ── My Clients ── */}
-        <Text style={{ fontSize: 22, fontWeight: "700", padding: 16 }}>
-          My Clients
-        </Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 16,
+            paddingTop: 16,
+            paddingBottom: 8,
+          }}
+        >
+          <Text style={{ fontSize: 22, fontWeight: "700" }}>My Clients</Text>
+          <Pressable
+            onPress={() => void onRefresh()}
+            style={{
+              backgroundColor: "#e5e7eb",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 10,
+            }}
+          >
+            <Text style={{ color: "#111827", fontWeight: "600", fontSize: 13 }}>
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </Text>
+          </Pressable>
+        </View>
 
         <FlatList
           data={clients}

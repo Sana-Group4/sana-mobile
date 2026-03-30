@@ -1,10 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, Pressable, Text, View } from "react-native";
-import { Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
+import { Alert, Keyboard, Pressable, ScrollView, Text, TouchableWithoutFeedback, View } from "react-native";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function ClientDetails() {
   <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -57,9 +56,22 @@ export default function ClientDetails() {
     });
   };
 
+  const goToClientBiometrics = () => {
+    router.push({
+      pathname: "/tabs/coach/client-info/client-biometrics",
+      params: {
+        clientId: String(parsed.id),
+        clientName: `${parsed.firstName ?? ""} ${parsed.lastName ?? ""}`.trim(),
+      },
+    });
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: "#f3f4f6" }}>
-      <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: 50, paddingHorizontal: 16, paddingBottom: 40 }}
+      >
 
         {/* HEADER */}
         <View
@@ -156,6 +168,23 @@ export default function ClientDetails() {
         {/* ACTION BUTTONS */}
         <View style={{ marginTop: 24, alignItems: "center" }}>
 
+          {/* VIEW BIOMETRICS */}
+          <Pressable
+            onPress={goToClientBiometrics}
+            style={{
+              backgroundColor: "#2563eb",
+              paddingVertical: 14,
+              borderRadius: 10,
+              width: 280,
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+              View Client Biometrics
+            </Text>
+          </Pressable>
+
           {/* ADD ACTIVITY */}
           <Pressable
             onPress={goToAddActivity}
@@ -190,7 +219,7 @@ export default function ClientDetails() {
           </Pressable>
         </View>
 
-      </View>
+      </ScrollView>
     </View>
   );
 }

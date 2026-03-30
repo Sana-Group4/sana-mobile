@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Keyboard, TouchableWithoutFeedback } from "react-native";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 // Predefined activity templates
 const ACTIVITY_TEMPLATES = [

@@ -16,7 +16,7 @@ import {
   Platform,
 } from "react-native";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Client {

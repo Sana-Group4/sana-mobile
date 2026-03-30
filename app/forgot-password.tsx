@@ -12,7 +12,7 @@ import {
 import Constants from "expo-constants";
 import { router } from "expo-router";
 
-const API_URL = Constants.expoConfig?.extra?.API_URL;
+const API_URL = Constants.expoConfig?.extra?.API_URL || "http://192.168.1.119:8000";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

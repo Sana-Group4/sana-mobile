@@ -37,10 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="analytics"
         options={{
-          title: "Analytics",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="bar-chart-outline" size={size} color={color} />
-          ),
+          href: null,
         }}
       />
 
@@ -70,6 +67,7 @@ export default function TabLayout() {
       <Tabs.Screen name="client-info/client-screen" options={{ href: null }} />
       <Tabs.Screen name="client-info/client-details" options={{ href: null }} />
       <Tabs.Screen name="client-info/add-activity" options={{ href: null }} />
+      <Tabs.Screen name="client-info/client-biometrics" options={{ href: null }} />
     </Tabs>
   );
 }
